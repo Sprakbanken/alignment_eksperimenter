@@ -1,4 +1,4 @@
-# Eksperimenter med dokument- og avsnitt/setnings-alignment for bokmål og nynorsk
+# Eksperimenter med text alignment for bokmål og nynorsk
 
 ## Dependencies
 Se `requirements.txt` for python-pakker du trenger for å kjøre denne koden
