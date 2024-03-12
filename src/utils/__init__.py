@@ -1,6 +1,6 @@
 import transformers
 
-def print_matches(matches, query_texts, corpus_texts, stop_printing_at=-1) -> None:
+def print_matches(matches, query_texts: list[str], corpus_texts: list[str], stop_printing_at=-1) -> None:
     print_i = 0
     for query_i, e in matches:
         if print_i == stop_printing_at:
@@ -49,7 +49,6 @@ def tokenize_and_split_text(text:str, tokenizer: transformers.BertTokenizerFast,
     texts = [tokenizer.convert_tokens_to_string(tokenized_text[start:end]) for (start, end) in split_indices]
     texts = [t for t in texts if t]
     return texts
-
 
 def split_on_separator_tokens(tokens: list[str], split_start_index: int, max_len:int, separator_tokens: list[str]) -> tuple[int, int]:
     max_split_index = split_start_index + max_len
