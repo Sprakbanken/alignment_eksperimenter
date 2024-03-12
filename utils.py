@@ -27,10 +27,9 @@ Indekser:
 _______________________________________________________________""")
         print_i += 1
 
-
-
 def tokenize_and_split_text(text:str, tokenizer: transformers.BertTokenizerFast, model_max_len: int, separators = ["?", "!", "."]) -> list[str]:
-    tokenized_text = tokenizer.tokenize(text)
+    ids = tokenizer(text)["input_ids"]
+    tokenized_text = tokenizer.convert_ids_to_tokens(ids, skip_special_tokens=True)
     if len(tokenized_text) <= model_max_len:
         return [text] 
     
@@ -60,7 +59,7 @@ def split_on_separator_tokens(tokens: list[str], split_start_index: int, max_len
         if token in separator_tokens and len(tokens[split_start_index:current_split_index]) <= max_len:
             return (split_start_index, current_split_index)
 
-    # could not find a separator that split the text into suitable length, split on word bourdary instead
+    # could not find a separator that split the text into suitable length, split on word boundary instead
     return split_on_word_boundary(tokens, split_start_index, max_len)
 
 def split_on_word_boundary(tokens:list[str], split_start_index:int, max_len:int) -> tuple[int, int]:
