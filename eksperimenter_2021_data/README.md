@@ -1,9 +1,5 @@
 # Eksperimenter med text alignment for bokmål og nynorsk
 
-## Dependencies
-Se `requirements.txt` for python-pakker du trenger for å kjøre denne koden
-
-
 # Lånekassen-eksperimenter
 
 Lånekassen har mye parallelldata, så vi har utført flere eksperimenter på deres data.  
