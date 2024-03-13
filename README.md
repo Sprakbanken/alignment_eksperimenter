@@ -1,18 +1,14 @@
 
 
 # Hvordan kjøre filene her:
-Du trenger python3, jeg bruker 3.11  
+Du trenger python3.11 og pip
 
 Lag et virtuelt pythonmiljø med f.eks venv:  
-`python3 -m venv <navn-på-miljø>`
-
-Aktiver venv:  
-`. <navn-på-miljø>/bin/activate`
-
-Installer moduler og pakker med pip:  
-`pip install -e .`
-
-
+```
+python3 -m venv <navn-på-miljø>     # lag miljø
+. <navn-på-miljø>/bin/activate      # aktiver miljø
+pip install -e .                    # installer pakker og moduler
+```
 # Nynorsk-bokmål alignment
 
 ## 2021-data
