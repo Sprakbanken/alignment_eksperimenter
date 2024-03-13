@@ -1,6 +1,13 @@
 import transformers
+import numpy as np
+from sentence_transformers import util
+from typing import TypedDict
 
-def print_matches(matches, query_texts: list[str], corpus_texts: list[str], stop_printing_at=-1) -> None:
+class Match(TypedDict):
+    corpus_id: int
+    score: float
+
+def print_matches(matches: list[tuple[int, Match]], query_texts: list[str], corpus_texts: list[str], stop_printing_at=-1) -> None:
     print_i = 0
     for query_i, e in matches:
         if print_i == stop_printing_at:
@@ -26,6 +33,26 @@ Indekser:
             Bokmål/treff:       {match_i}
 _______________________________________________________________""")
         print_i += 1
+
+def print_misses(misses: set[tuple[int, int]], search_result: list[list[Match]], bokmål_texts: list[str], nynorsk_texts: list[str], bokmål_embeddings: np.array, nynorsk_embeddings: np.array, threshold:float) -> None:
+    for nn_i, bm_i in misses:
+        match_i = search_result[nn_i][0]["corpus_id"]
+        match_score = search_result[nn_i][0]["score"]
+        
+        if match_i != bm_i:
+            print("Likeste søketreff er et annet dokument enn fasit\n")
+            print(f"Fasit indeks: {bm_i}\nTreff indeks: {match_i}")
+            print(f"Søketekst og fasit likhet: {float(util.cos_sim(nynorsk_embeddings[nn_i], bokmål_embeddings[bm_i]))}")
+            print(f"Søketekst og match likhet: {match_score}")
+            print(f"Treff og fasit likhet {float(util.cos_sim(bokmål_embeddings[bm_i], bokmål_embeddings[match_i]))}\n\n")
+
+            print(f"Nynorsk søketekst:\n\t{nynorsk_texts[nn_i][:300]}\n_____")
+            print(f"Bokmål søketreff:\n\t{bokmål_texts[match_i][:300]}\n_____")
+            print(f"Bokmål fasit:\n\t{bokmål_texts[bm_i][:300]}\n_____")
+
+        else:
+            print("Likeste søketreff er det samme som fasiten, men similarity score var under terskelen\n")
+            assert match_score <= threshold
 
 def tokenize_and_split_text(text:str, tokenizer: transformers.BertTokenizerFast, model_max_len: int, separators = ["?", "!", "."]) -> list[str]:
     ids = tokenizer(text)["input_ids"]
