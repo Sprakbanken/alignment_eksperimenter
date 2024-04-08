@@ -18,18 +18,19 @@ MERK: Dette er bare 1/5 av alle dokumentene, og vi har ingen negative eksempler.
 
 Vi fant parallelldokumenter ved å lage dokument-embeddings for alle dokumentene, og fant den likeste bokmålsembeddingen for hver nynorskembedding. Hvis bokmålsembeddingen var likere enn en viss terskel (i våre eksperimenter en cosinuslikhet over 0.95), kaller vi det en match, og et potensielt parallelldokument til det nynorske. 
 
-Både NB sBERT og LaBSE har kortere makslengde for inputs enn de fleste dokumentene. NB sBERT sin makslengde er 75 tokens, mens LaBSE har 256. For å omgå den korte kontekstlengden delte vi dokumentene opp i biter kortere enn makslengden, og kjørte disse gjennom modellene, og aggregerte opp til en embedding med forskjellige aggregeringsstrategier.  
+Både [NB sBERT](https://huggingface.co/NbAiLab/nb-sbert-base) og [LaBSE](https://huggingface.co/sentence-transformers/LaBSE) har kortere makslengde for inputs enn de fleste dokumentene. NB sBERT sin makslengde er 75 tokens, mens LaBSE har 256. For å omgå den korte kontekstlengden delte vi dokumentene opp i biter kortere enn makslengden, og kjørte disse gjennom modellene, og aggregerte opp til én embedding med forskjellige aggregeringsstrategier.  Vi eksperimenterte også med å utvide NB sBERT-modellens makslengde til makslengden til den underliggende [BERT-modellen](https://huggingface.co/NbAiLab/nb-bert-base). Vi kjørte også tekstene gjennom modellene uten å dele dem opp, da blir tekstene kuttet av på makslengden (altså får man bare med starten av teksten opp til makslengden med i vektorrepresentasjonen av dokumentet).
 
 Eksperimentet som fikk flest matcher (altså fant flest potensielle parallelldokumenter på bokmål til nynorskdokumentene) var NB sBERT og mean pooling[^1]. Dette ga 236 par av dokumenter.  
-Dette var også metoden som traff flest av dokumentene fra fasiten (traff 52 av 55).  
 
-Nest best i treff på fasit deles mellom NB sBERT med max pooling[^2], LaBSE med mean pooling og LaBSE med naiv cut-off [^3]. Disse traff 48 av 55.  
-De fant matcher for 221, 212 og 217 dokumenter, respektivt. Siden vi ikke har noen god måte å måle falske positiver (annet enn stikkprøvder), er det ikke så godt å si hvilke av disse metodene som egentlig er best.  
+Metodene som traff flest av dokumentparene fra fasiten var NB sBERT med mean pooling og utvidet NB sBERT med naiv cutoff. NB sBERT med naiv cutoff fant 232 dokumentpar.
+
+Siden vi ikke har noen god måte å måle falske positiver (annet enn stikkprøvder), er det ikke så godt å si hvilke av disse metodene som egentlig er best.  
 
 
 [^1]: å la hvert dokuments vektorrepresentasjon være gjennomsnittsvektoren av embeddingene av bitene i dokumentet  
 [^2]: å la hvert dokuments vektorrepresentasjon være maksvektoren (altså maksverdien i hver dimensjon) av embeddingene av bitene i dokumentet  
 [^3]: å godta at dokumentet blir kuttet på makslengden (kanskje starten av dokumentet er representativt nok?)  
+
 
 ## Avsnitts-alignment
 
@@ -43,16 +44,14 @@ Det er 4032 avsnitt på nynorsk, og 6452 på bokmål.
 (se notebookene [lånekassen_sbert.ipynb](lånekassen_sbert.ipynb) og [lånekassen_labse.ipynb](lånekassen_labse.ipynb))
 
 Ca 70% av avsnittene/setningene er innenfor NB sBERT sin makslengde.  
-Ca 93% er innenfor LaBSE sin makslengde. 
+Ca 93% er innenfor LaBSE sin makslengde. Ca 97% av avsnittene/setningene er innenfor NB BERT sin makslengde. 
 
 Vi bruker tilnærming som ved dokumentalignmen for å finne parallellavsnitt, og de samme aggregeringsstrategiene for å ta høyde for de avsnittene som er for lange.
 
 I tillegg sjekker vi bare enkel stringmatch, og finner at 341 av de nynorske avsnitt/setning/ordene har en nøyaktig match fra bokmålavsnitt/-setning/-ordene. 
 
 Eksperimentet som fikk flest matcher var LaBSE embeddings og naiv cutoff på biter[^4], som ga 2389 paralellavsnitt på nynorsk og bokmål.  
-For avsnitt/setningsalignment fikk alle LaBSE-eksperimentene flere matches enn NB sBERT-eksperimentet med flest matches. Med NB sBERT er det naiv cutoff som gir flest matches, med 2343 paralellavsnitt.   
+For avsnitt/setningsalignment fikk alle LaBSE-eksperimentene flere matches enn NB sBERT-eksperimentet med flest matches. Med NB sBERT er det utvidet versjon med naiv cutoff som gir flest matches, med 2357 paralellavsnitt.   
 Vi har ikke kvalitetssikret disse treffene, så det er ikke nødvendigvis slik at metoden som finner flest potensielle parallelltekster er den som er best.   
 
-
-[^4]: vi deler dokumentet opp i biter som er kortere enn makslengden og sender lista med biter inn i modellen. Det som skjer er at modellen lager en embedding av de to første listene (hacky løsning, se notebooken [diverse/sbert_weirdness.ipynb](diverse/sbert_weirdness.ipynb) for detaljer)
 
