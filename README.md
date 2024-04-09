@@ -4,10 +4,10 @@
 Du trenger python3.11 og pip
 
 Lag et virtuelt pythonmiljø med f.eks venv:  
-```
-python3 -m venv <navn-på-miljø>     # lag miljø
-. <navn-på-miljø>/bin/activate      # aktiver miljø
-pip install -e .                    # installer pakker og moduler
+```bash
+    python3 -m venv <navn-på-miljø>     # lag miljø
+    . <navn-på-miljø>/bin/activate      # aktiver miljø
+    pip install .                       # installer pakker og moduler
 ```
 # Nynorsk-bokmål alignment
 

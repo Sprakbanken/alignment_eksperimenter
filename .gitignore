@@ -4,3 +4,4 @@ embeddings
 *__pycache__*
 *.egg-info/
 output
+build/*
