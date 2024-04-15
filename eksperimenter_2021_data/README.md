@@ -1,20 +1,17 @@
 # Eksperimenter med text alignment for bokmål og nynorsk
-
-# Lånekassen-eksperimenter
-
-Lånekassen har mye parallelldata, så vi har utført flere eksperimenter på deres data.  
+Lånekassen har mye parallelldata, så vi har utført flere eksperimenter på deres data fra 2021.  
 Det er 566 dokumenter, hvorav 256 er nynorske og 310 er på bokmål.  
 
 ## Dokument-alignment
 
 ### "Fasit" 
-(se notebooken [lånekassen_fasit.ipynb](lånekassen_fasit.ipynb))  
-Av de 566 dokumentene vi har scrapet fra lånekassen, er det 110 dokumenter hvor urlen er helt lik bortsett fra språkkoden ("nn-NO" og "nb-NO").  
+(se notebooken [2_lag_lånekassen_fasit.ipynb](2_lag_lånekassen_fasit.ipynb))  
+Av de 566 dokumentene vi har scrapet fra lånekassen, er det 55 par av dokumenter hvor urlen er helt lik bortsett fra språkkoden ("nn-NO" og "nb-NO").  
 Disse bruker vi som en "fasit" for parallelle dokumenter.  
 MERK: Dette er bare 1/5 av alle dokumentene, og vi har ingen negative eksempler. Vi kan dermed ikke måle precision og recall, men dette subsettet av parallelldata kan gi en indikator på hvor bra eksperimentene går ved å se i hvor stor grad de treffer fasiten.
 
 ### Eksperimenter med sentence-transformers: NB sBERT og LaBSE
-(se notebookene [lånekassen_sbert.ipynb](lånekassen_sbert.ipynb) og [lånekassen_labse.ipynb](lånekassen_labse.ipynb))
+(se notebookene [3_align_med_sbert.ipynb](3_align_med_sbert.ipynb)  og [3_align_med_labse.ipynb](3_align_med_labse.ipynb))
 
 Vi fant parallelldokumenter ved å lage dokument-embeddings for alle dokumentene, og fant den likeste bokmålsembeddingen for hver nynorskembedding. Hvis bokmålsembeddingen var likere enn en viss terskel (i våre eksperimenter en cosinuslikhet over 0.95), kaller vi det en match, og et potensielt parallelldokument til det nynorske. 
 
@@ -41,17 +38,16 @@ I data fra lånekassen ser det ut som mange av disse avsnittene egentlig er setn
 Det er 4032 avsnitt på nynorsk, og 6452 på bokmål.
 
 ### Eksperimenter med sentence-transformers: NB sBERT og LaBSE
-(se notebookene [lånekassen_sbert.ipynb](lånekassen_sbert.ipynb) og [lånekassen_labse.ipynb](lånekassen_labse.ipynb))
+(se notebookene [3_align_med_sbert.ipynb](3_align_med_sbert.ipynb)  og [3_align_med_labse.ipynb](3_align_med_labse.ipynb))
 
 Ca 70% av avsnittene/setningene er innenfor NB sBERT sin makslengde.  
-Ca 93% er innenfor LaBSE sin makslengde. Ca 97% av avsnittene/setningene er innenfor NB BERT sin makslengde. 
+Ca 93% er innenfor LaBSE sin makslengde.  
+Ca 97% av avsnittene/setningene er innenfor NB BERT sin makslengde. 
 
 Vi bruker tilnærming som ved dokumentalignmen for å finne parallellavsnitt, og de samme aggregeringsstrategiene for å ta høyde for de avsnittene som er for lange.
 
 I tillegg sjekker vi bare enkel stringmatch, og finner at 341 av de nynorske avsnitt/setning/ordene har en nøyaktig match fra bokmålavsnitt/-setning/-ordene. 
 
 Eksperimentet som fikk flest matcher var LaBSE embeddings og naiv cutoff på biter[^4], som ga 2389 paralellavsnitt på nynorsk og bokmål.  
-For avsnitt/setningsalignment fikk alle LaBSE-eksperimentene flere matches enn NB sBERT-eksperimentet med flest matches. Med NB sBERT er det utvidet versjon med naiv cutoff som gir flest matches, med 2357 paralellavsnitt.   
+For avsnitt/setningsalignment fikk alle LaBSE-eksperimentene flere matches enn NB sBERT-eksperimentet med flest matches. Med NB sBERT er det utvidet versjon med naiv cutoff som gir flest matches, med 2357 parallellavsnitt.   
 Vi har ikke kvalitetssikret disse treffene, så det er ikke nødvendigvis slik at metoden som finner flest potensielle parallelltekster er den som er best.   
-
-
