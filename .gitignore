@@ -4,3 +4,4 @@ embeddings
 *.egg-info/
 output
 build/*
+logs
