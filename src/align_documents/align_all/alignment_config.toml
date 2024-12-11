@@ -7,3 +7,5 @@ batch_size = 32                           # Batch size for encoding sentences
 aggregation_strategy = "cut-off"          # Aggregation strategy for sentence embeddings
 match_threshold = 0.95                    # Threshold for matching documents
 languages = ["nno", "nob"]                # Languages to align (must be a list of length 2)
+number_to_letter_ratio = 0.3              # Ratio of numbers to letters in the document (discard if greater)
+min_document_length = 100                 # Minimum number of characters in a document (discard if less)

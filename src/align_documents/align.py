@@ -6,6 +6,8 @@ import torch
 import numpy as np
 from align_documents.utils.split import tokenize_and_split_text
 from align_documents.types import AggregationStrategy
+import regex as re
+from functools import partial
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +86,18 @@ def get_sentence_embeddings(
     return embeddings
 
 
+def has_bad_quality(
+    doc_text: str, min_len: int | None, number_to_letter_ratio: float
+) -> bool:
+    if min_len and len(doc_text) < min_len:
+        return True
+    num_nums = len(re.findall(r"\d", doc_text))
+    num_letters = len(re.findall(r"[A-Za-zÅåÆæØø]", doc_text))
+    if num_nums / num_letters > number_to_letter_ratio:
+        return True
+    return False
+
+
 def align(
     df: pd.DataFrame,
     website_name: str,
@@ -93,29 +107,48 @@ def align(
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
     languages: tuple[str, str],
+    min_doc_len: int | None,
+    number_to_letter_ratio: float,
 ) -> pd.DataFrame:
     """Align documents using sentence embeddings."""
 
     lang1, lang2 = languages
 
+    quality_function = partial(
+        has_bad_quality,
+        min_len=min_doc_len,
+        number_to_letter_ratio=number_to_letter_ratio,
+    )
+
     lang1_df = df[df.lang == lang1]
+    logger.debug("Number of documents in %s before filtering: %s", lang1, len(lang1_df))
     lang1_df = lang1_df.drop_duplicates(subset="fulltext_joined")
+    logger.debug(
+        "Number of documents in %s after dropping duplicates: %s", lang1, len(lang1_df)
+    )
+    lang1_df = lang1_df[~lang1_df.fulltext_joined.apply(quality_function)]
+    logger.debug(
+        "Number of documents in %s after filtering on quality: %s", lang1, len(lang1_df)
+    )
+
     lang1_df.index = range(len(lang1_df))
 
     lang2_df = df[df.lang == lang2]
+    logger.debug("Number of documents in %s before filtering: %s", lang2, len(lang2_df))
     lang2_df = lang2_df.drop_duplicates(subset="fulltext_joined")
+    logger.debug(
+        "Number of documents in %s after dropping duplicates: %s", lang2, len(lang2_df)
+    )
+    lang2_df = lang2_df[~lang2_df.fulltext_joined.apply(quality_function)]
+    logger.debug(
+        "Number of documents in %s after filtering on quality: %s", lang2, len(lang2_df)
+    )
     lang2_df.index = range(len(lang2_df))
 
     if len(lang1_df) > len(lang2_df):
-        # Sat lang1 to be language with fewest documents (for semantic search below)
+        # Set lang1 to be language with fewest documents (for semantic search below)
         lang1, lang2 = lang2, lang1
         lang1_df, lang2_df = lang2_df, lang1_df
-
-    # TODO: filter out texts of bad quality
-    # TODO: filter out duplicate documents
-
-    logger.debug("Number of documents in %s: %s", lang1, len(lang1_df))
-    logger.debug("Number of documents in %s: %s", lang2, len(lang2_df))
 
     embedding_directory = embedding_dir / model_id
     embedding_directory.mkdir(exist_ok=True, parents=True)

@@ -89,6 +89,8 @@ def validate_config(config: dict) -> dict:
         "aggregation_strategy",
         "match_threshold",
         "languages",
+        "number_to_letter_ratio",
+        "min_document_length",
     ]
     for key in config_keys:
         if key not in config:
@@ -101,6 +103,8 @@ def validate_config(config: dict) -> dict:
         "aggregation_strategy": lambda x: AggregationStrategy(x),
         "batch_size": lambda x: int(x),
         "languages": lambda x: tuple(x),
+        "number_to_letter_ratio": lambda x: float(x),
+        "min_document_length": lambda x: int(x),
     }
 
     for key, cast_function in config_casts.items():
@@ -158,8 +162,9 @@ def main():
             aggregation_strategy=config["aggregation_strategy"],
             batch_size=config["batch_size"],
             languages=config["languages"],
+            min_doc_len=config["min_document_length"],
+            number_to_letter_ratio=config["number_to_letter_ratio"],
         )
-        logger.debug(aligned_documents)
         dfs.append(aligned_documents)
 
     aligned_docs = pd.concat(dfs)
