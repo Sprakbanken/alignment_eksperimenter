@@ -88,6 +88,7 @@ def validate_config(config: dict) -> dict:
         "batch_size",
         "aggregation_strategy",
         "match_threshold",
+        "languages",
     ]
     for key in config_keys:
         if key not in config:
@@ -99,10 +100,14 @@ def validate_config(config: dict) -> dict:
         "match_threshold": lambda x: float(x),
         "aggregation_strategy": lambda x: AggregationStrategy(x),
         "batch_size": lambda x: int(x),
+        "languages": lambda x: tuple(x),
     }
 
     for key, cast_function in config_casts.items():
         config[key] = cast_function(config[key])
+
+    if len(config["languages"]) != 2:
+        raise ValueError("languages must (only) contain two languages")
 
     return config
 
@@ -127,7 +132,7 @@ def main():
     validate_config(config)
 
     df = get_file_info(config["data_dir"])
-    df = filter_df(df, languages=("nob", "nno"))
+    df = filter_df(df, languages=config["languages"])
 
     dfs = []
     for website, df_ in tqdm(
@@ -152,6 +157,7 @@ def main():
             match_threshold=config["match_threshold"],
             aggregation_strategy=config["aggregation_strategy"],
             batch_size=config["batch_size"],
+            languages=config["languages"],
         )
         logger.debug(aligned_documents)
         dfs.append(aligned_documents)

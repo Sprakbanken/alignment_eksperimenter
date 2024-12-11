@@ -4,7 +4,6 @@ import logging
 from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
-from typing import Literal
 from align_documents.utils.split import tokenize_and_split_text
 from align_documents.types import AggregationStrategy
 
@@ -93,42 +92,53 @@ def align(
     match_threshold: float,
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
+    languages: tuple[str, str],
 ) -> pd.DataFrame:
     """Align documents using sentence embeddings."""
-    nynorsk_df = df[df.lang == "nno"]
-    nynorsk_df.index = range(len(nynorsk_df))
 
-    bokmål_df = df[df.lang == "nob"]
-    bokmål_df.index = range(len(bokmål_df))
+    lang1, lang2 = languages
+
+    lang1_df = df[df.lang == lang1]
+    lang1_df = lang1_df.drop_duplicates(subset="fulltext_joined")
+    lang1_df.index = range(len(lang1_df))
+
+    lang2_df = df[df.lang == lang2]
+    lang2_df = lang2_df.drop_duplicates(subset="fulltext_joined")
+    lang2_df.index = range(len(lang2_df))
+
+    if len(lang1_df) > len(lang2_df):
+        # Sat lang1 to be language with fewest documents (for semantic search below)
+        lang1, lang2 = lang2, lang1
+        lang1_df, lang2_df = lang2_df, lang1_df
 
     # TODO: filter out texts of bad quality
     # TODO: filter out duplicate documents
 
-    logger.debug("Number of documents in nynorsk: %s", len(nynorsk_df))
-    logger.debug("Number of documents in bokmål: %s", len(bokmål_df))
+    logger.debug("Number of documents in %s: %s", lang1, len(lang1_df))
+    logger.debug("Number of documents in %s: %s", lang2, len(lang2_df))
 
     embedding_directory = embedding_dir / model_id
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
-    nynorsk_embeddings = get_sentence_embeddings(
+    lang1_embeddings = get_sentence_embeddings(
         embedding_model_id=model_id,
-        sentences=nynorsk_df.fulltext_joined,
+        sentences=lang1_df.fulltext_joined,
         embedding_directory=embedding_directory,
-        filename_identifier=f"{website_name}_nynorsk",
+        filename_identifier=f"{website_name}_{lang1}",
         aggregation_strategy=aggregation_strategy,
         batch_size=batch_size,
     )
 
-    bokmål_embeddings = get_sentence_embeddings(
+    lang2_embeddings = get_sentence_embeddings(
         embedding_model_id=model_id,
-        sentences=bokmål_df.fulltext_joined,
+        sentences=lang2_df.fulltext_joined,
         embedding_directory=embedding_directory,
-        filename_identifier=f"{website_name}_bokmål",
+        filename_identifier=f"{website_name}_{lang2}",
         aggregation_strategy=aggregation_strategy,
         batch_size=batch_size,
     )
 
-    search_result = util.semantic_search(nynorsk_embeddings, bokmål_embeddings, top_k=1)
+    search_result = util.semantic_search(lang1_embeddings, lang2_embeddings, top_k=1)
     matches = [
         (i, e[0])
         for i, e in enumerate(search_result)
@@ -137,17 +147,17 @@ def align(
     logger.debug("Number of matches: %s", len(matches))
 
     if matches:
-        nynorsk_indices = [i for i, _ in matches]
-        bokmål_indices = [e["corpus_id"] for _, e in matches]
+        lang1_indices = [i for i, _ in matches]
+        lang2_indices = [e["corpus_id"] for _, e in matches]
 
-        nynorsk_df = nynorsk_df.loc[nynorsk_indices]
-        nynorsk_df.index = range(len(nynorsk_df))
+        lang1_df = lang1_df.loc[lang1_indices]
+        lang1_df.index = range(len(lang1_df))
 
-        bokmål_df = bokmål_df.loc[bokmål_indices]
-        bokmål_df.index = range(len(bokmål_df))
+        lang2_df = lang2_df.loc[lang2_indices]
+        lang2_df.index = range(len(lang2_df))
 
-        df = nynorsk_df.merge(
-            bokmål_df, on=nynorsk_df.index, suffixes=("_nynorsk", "_bokmål")
+        df = lang1_df.merge(
+            lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)
         )
         logger.debug("Number of aligned documents: %s", len(df))
         return df

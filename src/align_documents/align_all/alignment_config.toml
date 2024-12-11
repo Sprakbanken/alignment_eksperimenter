@@ -6,3 +6,4 @@ log_level = "INFO"                        # Set the log level
 batch_size = 32                           # Batch size for encoding sentences
 aggregation_strategy = "cut-off"          # Aggregation strategy for sentence embeddings
 match_threshold = 0.95                    # Threshold for matching documents
+languages = ["nno", "nob"]                # Languages to align (must be a list of length 2)
