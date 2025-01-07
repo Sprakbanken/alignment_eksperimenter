@@ -5,3 +5,5 @@ embeddings
 output
 build/*
 logs
+
+.pdm-python

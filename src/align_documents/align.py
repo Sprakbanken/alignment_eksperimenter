@@ -93,6 +93,8 @@ def has_bad_quality(
         return True
     num_nums = len(re.findall(r"\d", doc_text))
     num_letters = len(re.findall(r"[A-Za-zÅåÆæØø]", doc_text))
+    if num_letters == 0:
+        return True
     if num_nums / num_letters > number_to_letter_ratio:
         return True
     return False
