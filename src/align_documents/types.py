@@ -8,6 +8,6 @@ class Match(TypedDict):
 
 class AggregationStrategy(str):
     def __new__(cls, value):
-        if value not in ["cut-off", "max", "mean"]:
+        if value not in ["cut-off", "mean"]:
             raise ValueError("Invalid aggregation strategy")
         return str.__new__(cls, value)
