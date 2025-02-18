@@ -69,7 +69,7 @@ def read_all_jsonl_files(source_dir: Path, filenames: pd.Series) -> pd.DataFrame
 
 def validate_config(config: dict) -> dict:
     if config["data_dir"]:
-        config["data_dir"] = Path(config.data_dir)
+        config["data_dir"] = Path(config["data_dir"])
         if not config["data_dir"].exists():
             raise ValueError("Data directory does not exist.")
     else:
