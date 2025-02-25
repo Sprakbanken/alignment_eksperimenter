@@ -1,10 +1,11 @@
 from pathlib import Path
+from numpy.typing import NDArray
 import pandas as pd
 import logging
 from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
-from align_documents.utils.split import tokenize_and_split_text
+from align_documents.utils.split import tokenize_and_split_text, tokenize_sentences
 from align_documents.types import AggregationStrategy
 import regex as re
 from functools import partial
@@ -17,7 +18,7 @@ def create_sentence_embeddings(
     sentences: list[str],
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
-) -> np.array:
+) -> NDArray:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer(embedding_model_id, device=device)
 
@@ -33,21 +34,18 @@ def create_sentence_embeddings(
     match aggregation_strategy:
         case "cut-off":
             embeddings = model.encode(sentences, batch_size=batch_size)
+        case "semchunks":
+            chunked_sentences = tokenize_sentences(sentences, model)
+            embeddings = [model.encode(chunk, batch_size=batch_size) for sentence in chunked_sentences for chunk in sentence]
         case "mean":
-            maxlen_parts = [
-                tokenize_and_split_text(
-                    text,
-                    tokenizer=model.tokenizer,
-                    model_max_len=model.get_max_seq_length(),
-                )
-                for text in sentences
-            ]
+            chunked_sentences = tokenize_sentences(sentences, model)
             embeddings = [
-                np.mean(model.encode(text_parts, batch_size=batch_size), axis=0)
-                for text_parts in maxlen_parts
+                np.mean(model.encode(sentence, batch_size=batch_size), axis=0)
+                for sentence in chunked_sentences
             ]
         case _:
             raise ValueError("Invalid aggregation strategy")
+
     return embeddings
 
 
