@@ -33,19 +33,6 @@ def create_sentence_embeddings(
     match aggregation_strategy:
         case "cut-off":
             embeddings = model.encode(sentences, batch_size=batch_size)
-        case "max":
-            maxlen_parts = [
-                tokenize_and_split_text(
-                    text,
-                    tokenizer=model.tokenizer,
-                    model_max_len=model.get_max_seq_length(),
-                )
-                for text in sentences
-            ]
-            embeddings = [
-                np.max(model.encode(text_parts, batch_size=batch_size), axis=0)
-                for text_parts in maxlen_parts
-            ]
         case "mean":
             maxlen_parts = [
                 tokenize_and_split_text(
