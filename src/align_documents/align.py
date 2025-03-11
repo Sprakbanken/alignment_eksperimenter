@@ -34,9 +34,6 @@ def create_sentence_embeddings(
     match aggregation_strategy:
         case "cut-off":
             embeddings = model.encode(sentences, batch_size=batch_size)
-        case "semchunks":
-            chunked_sentences = tokenize_and_split_text(sentences, model)
-            embeddings = [model.encode(chunk, batch_size=batch_size) for sentence in chunked_sentences for chunk in sentence]
         case "mean":
             chunked_sentences = tokenize_and_split_text(sentences, model)
             embeddings = [
