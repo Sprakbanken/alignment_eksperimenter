@@ -5,7 +5,7 @@ import logging
 from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
-from align_documents.utils.split import tokenize_and_split_text, tokenize_sentences
+from align_documents.utils.split import tokenize_sentences
 from align_documents.types import AggregationStrategy
 import regex as re
 from functools import partial
