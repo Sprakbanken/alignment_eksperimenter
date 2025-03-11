@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 import tokenizers
 from semchunk import semchunk
 
-def tokenize_sentences(
+def tokenize_and_split_text(
     sentences: list[str],
     model: SentenceTransformer | None = None,
     tokenizer: str | transformers.PreTrainedTokenizer | tokenizers.Tokenizer | None = None,
