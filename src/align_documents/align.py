@@ -53,7 +53,7 @@ def get_sentence_embeddings(
     filename_identifier: str,
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
-) -> np.array:
+) -> NDArray | list[util.Tensor]:
     """Get existing or create sentence embeddings"""
     filename = embedding_directory / f"{filename_identifier}_{aggregation_strategy}.npy"
 
