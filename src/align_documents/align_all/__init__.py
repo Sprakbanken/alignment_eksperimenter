@@ -84,7 +84,6 @@ def validate_config(config: dict) -> dict:
         "output_dir",
         "embedding_model",
         "embedding_dir",
-        "log_level",
         "batch_size",
         "aggregation_strategy",
         "match_threshold",
@@ -169,6 +168,8 @@ def main():
 
     aligned_docs = pd.concat(dfs)
     aligned_docs.index = range(len(aligned_docs))
+
+    logger.info("Number of aligned documents: %s", len(aligned_docs))
 
     config["output_dir"].mkdir(exist_ok=True, parents=True)
     outfile = config["output_dir"] / "aligned_docs.jsonl"
