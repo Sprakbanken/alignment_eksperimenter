@@ -18,7 +18,7 @@ def create_sentence_embeddings(
     sentences: list[str],
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
-) -> NDArray:
+) -> NDArray | list[util.Tensor]:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer(embedding_model_id, device=device)
 
@@ -36,10 +36,10 @@ def create_sentence_embeddings(
             embeddings = model.encode(sentences, batch_size=batch_size)
         case "mean":
             chunked_sentences = tokenize_and_split_text(sentences, model)
-            embeddings = [
-                np.mean(model.encode(sentence, batch_size=batch_size), axis=0)
+            embeddings = np.array([
+                (np.mean(model.encode(sentence, batch_size=batch_size), axis=0))
                 for sentence in chunked_sentences
-            ]
+            ])
         case _:
             raise ValueError("Invalid aggregation strategy")
 
