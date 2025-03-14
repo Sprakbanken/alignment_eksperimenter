@@ -35,7 +35,7 @@ def create_sentence_embeddings(
         case "cut-off":
             embeddings = model.encode(sentences, batch_size=batch_size)
         case "mean":
-            chunked_sentences = chunk_texts(sentences, model)
+            chunked_sentences = chunk_texts(sentences, model.tokenizer, model.get_max_seq_length())
             embeddings = np.array([
                 (np.mean(model.encode(sentence, batch_size=batch_size), axis=0))
                 for sentence in chunked_sentences
