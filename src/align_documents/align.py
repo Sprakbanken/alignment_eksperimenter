@@ -5,7 +5,7 @@ import logging
 from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
-from align_documents.utils.split import tokenize_and_split_text
+from align_documents.utils.split import chunk_texts
 from align_documents.types import AggregationStrategy
 import regex as re
 from functools import partial
@@ -35,7 +35,7 @@ def create_sentence_embeddings(
         case "cut-off":
             embeddings = model.encode(sentences, batch_size=batch_size)
         case "mean":
-            chunked_sentences = tokenize_and_split_text(sentences, model)
+            chunked_sentences = chunk_texts(sentences, model)
             embeddings = np.array([
                 (np.mean(model.encode(sentence, batch_size=batch_size), axis=0))
                 for sentence in chunked_sentences

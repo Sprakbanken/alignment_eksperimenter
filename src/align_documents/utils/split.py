@@ -3,8 +3,8 @@ from sentence_transformers import SentenceTransformer
 import tokenizers
 from semchunk import semchunk
 
-def tokenize_and_split_text(
-    sentences: list[str],
+def chunk_texts(
+    texts: list[str],
     model: SentenceTransformer | None = None,
     tokenizer: str | transformers.PreTrainedTokenizer | tokenizers.Tokenizer | None = None,
     chunk_max_len: int | None = None,
@@ -18,7 +18,7 @@ def tokenize_and_split_text(
             tokenizer = model.tokenizer
 
     chunker = semchunk.chunkerify(tokenizer, chunk_size=chunk_max_len)
-    chunked_sentences = chunker(sentences)
+    chunked_texts = chunker(texts)
 
-    return chunked_sentences
+    return chunked_texts
 
