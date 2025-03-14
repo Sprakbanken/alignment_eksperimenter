@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 from tqdm import tqdm
 from align_documents.utils import setup_logging
+from align_documents.utils.get_embedding_model import get_embedding_model
 from align_documents.align import align
 from align_documents.types import AggregationStrategy
 import tomllib
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_file_info(data_dir: Path) -> pd.DataFrame:
-    info = sorted([e.name[:-6].split("_") + [e.name] for e in data_dir.iterdir()])
+    info = sorted([e.name[:-6].split("_") + [e.name] for e in data_dir.glob("*.jsonl")])
     df = pd.DataFrame(info, columns=["website", "language", "format", "file_name"])
     logger.info("Found %s files in %s", len(df), data_dir)
     logger.info("Number of unique websites: %s", len(df.website.unique()))
@@ -137,6 +138,11 @@ def main():
     df = get_file_info(config["data_dir"])
     df = filter_df(df, languages=config["languages"])
 
+    embedding_model = get_embedding_model(config["embedding_model"])
+
+    embedding_directory = config["embedding_dir"] / config["embedding_model"]
+    embedding_directory.mkdir(exist_ok=True, parents=True)
+
     dfs = []
     for website, df_ in tqdm(
         df.groupby("website"),
@@ -155,8 +161,8 @@ def main():
         aligned_documents = align(
             all_website_docs,
             website_name=website,
-            embedding_dir=config["embedding_dir"],
-            model_id=config["embedding_model"],
+            embedding_dir=embedding_directory,
+            embedding_model=embedding_model,
             match_threshold=config["match_threshold"],
             aggregation_strategy=config["aggregation_strategy"],
             batch_size=config["batch_size"],

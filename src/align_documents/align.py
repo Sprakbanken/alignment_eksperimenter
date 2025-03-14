@@ -13,58 +13,45 @@ from functools import partial
 logger = logging.getLogger(__name__)
 
 
-def create_sentence_embeddings(
-    embedding_model_id: str,
-    sentences: list[str],
+def create_document_embeddings(
+    embedding_model: SentenceTransformer,
+    documents: list[str],
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
-) -> NDArray:
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = SentenceTransformer(embedding_model_id, device=device)
-
-    basemodel_max_len = model[0].auto_model.config.max_position_embeddings
-    if basemodel_max_len != model.get_max_seq_length():
-        logger.info(
-            "Setting max_seq_length to %s (was %s)",
-            basemodel_max_len,
-            model.get_max_seq_length(),
-        )
-        model.max_seq_length = basemodel_max_len
-
+) -> np.array:
     match aggregation_strategy:
         case "cut-off":
-            embeddings = model.encode(sentences, batch_size=batch_size)
-        case "semchunks":
-            chunked_sentences = tokenize_sentences(sentences, model)
-            embeddings = [model.encode(chunk, batch_size=batch_size) for sentence in chunked_sentences for chunk in sentence]
+            embeddings = embedding_model.encode(documents, batch_size=batch_size)
         case "mean":
-            chunked_sentences = tokenize_sentences(sentences, model)
-            embeddings = [
-                np.mean(model.encode(sentence, batch_size=batch_size), axis=0)
-                for sentence in chunked_sentences
-            ]
+            chunked_docs = tokenize_sentences(documents, embedding_model)
+            embeddings = np.array([
+                np.mean(embedding_model.encode(doc_chunks, batch_size=batch_size), axis=0)
+                for doc_chunks in chunked_docs
+            ])
         case _:
             raise ValueError("Invalid aggregation strategy")
 
     return embeddings
 
 
-def get_sentence_embeddings(
-    embedding_model_id: str,
-    sentences: list[str],
+def get_document_embeddings(
+    embedding_model: SentenceTransformer,
+    documents: list[str],
     embedding_directory: Path,
     filename_identifier: str,
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
 ) -> np.array:
-    """Get existing or create sentence embeddings"""
+    """Get existing or create document embeddings"""
     filename = embedding_directory / f"{filename_identifier}_{aggregation_strategy}.npy"
 
     if filename.exists():
+        logger.debug("Loading embeddings from %s", filename)
         embeddings = np.load(filename)
     else:
-        embeddings = create_sentence_embeddings(
-            embedding_model_id, sentences, aggregation_strategy, batch_size
+        logger.debug("Creating embeddings for %s", filename)
+        embeddings = create_document_embeddings(
+            embedding_model, documents, aggregation_strategy, batch_size
         )
         np.save(filename, embeddings)
 
@@ -89,7 +76,7 @@ def align(
     df: pd.DataFrame,
     website_name: str,
     embedding_dir: Path | None,
-    model_id: str,
+    embedding_model: SentenceTransformer,
     match_threshold: float,
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
@@ -137,22 +124,21 @@ def align(
         lang1, lang2 = lang2, lang1
         lang1_df, lang2_df = lang2_df, lang1_df
 
-    embedding_directory = embedding_dir / model_id
-    embedding_directory.mkdir(exist_ok=True, parents=True)
 
-    lang1_embeddings = get_sentence_embeddings(
-        embedding_model_id=model_id,
-        sentences=lang1_df.fulltext_joined,
-        embedding_directory=embedding_directory,
+
+    lang1_embeddings = get_document_embeddings(
+        embedding_model=embedding_model,
+        documents=lang1_df.fulltext_joined,
+        embedding_directory=embedding_dir,
         filename_identifier=f"{website_name}_{lang1}",
         aggregation_strategy=aggregation_strategy,
         batch_size=batch_size,
     )
 
-    lang2_embeddings = get_sentence_embeddings(
-        embedding_model_id=model_id,
-        sentences=lang2_df.fulltext_joined,
-        embedding_directory=embedding_directory,
+    lang2_embeddings = get_document_embeddings(
+        embedding_model=embedding_model,
+        documents=lang2_df.fulltext_joined,
+        embedding_directory=embedding_dir,
         filename_identifier=f"{website_name}_{lang2}",
         aggregation_strategy=aggregation_strategy,
         batch_size=batch_size,
