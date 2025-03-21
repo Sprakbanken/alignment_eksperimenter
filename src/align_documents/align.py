@@ -18,18 +18,17 @@ def create_document_embeddings(
     documents: list[str],
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
-) -> np.array:
+) -> list[torch.Tensor]:
     match aggregation_strategy:
         case "cut-off":
-            embeddings = embedding_model.encode(documents, batch_size=batch_size)
+            embeddings = embedding_model.encode(documents, batch_size=batch_size, convert_to_tensor=True)
         case "mean":
             chunked_docs = chunk_texts(documents, embedding_model.tokenizer, embedding_model.get_max_seq_length())
-                        np.mean(embedding_model.encode(doc_chunks, batch_size=batch_size), axis=0)
-            for doc_chunks in chunked_docs
-            embeddings = np.array([
-                np.mean(embedding_model.encode(doc_chunks, batch_size=batch_size), axis=0)
+            embeddings = [
+                torch.mean(embedding_model.encode(doc_chunks, batch_size=batch_size, convert_to_tensor=True), axis=0)
+
                 for doc_chunks in chunked_docs
-            ])
+            ]
         case _:
             raise ValueError("Invalid aggregation strategy")
 
@@ -43,19 +42,19 @@ def get_document_embeddings(
     filename_identifier: str,
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
-) -> np.array:
+) -> list[torch.Tensor]:
     """Get existing or create document embeddings"""
-    filename = embedding_directory / f"{filename_identifier}_{aggregation_strategy}.npy"
+    filename = embedding_directory / f"{filename_identifier}_{aggregation_strategy}.pt"
 
     if filename.exists():
         logger.debug("Loading embeddings from %s", filename)
-        embeddings = np.load(filename)
+        embeddings = torch.load(filename)
     else:
         logger.debug("Creating embeddings for %s", filename)
         embeddings = create_document_embeddings(
             embedding_model, documents, aggregation_strategy, batch_size
         )
-        np.save(filename, embeddings)
+        torch.save(embeddings, f=filename)
 
     return embeddings
 
@@ -125,8 +124,6 @@ def align(
         # Set lang1 to be language with fewest documents (for semantic search below)
         lang1, lang2 = lang2, lang1
         lang1_df, lang2_df = lang2_df, lang1_df
-
-
 
     lang1_embeddings = get_document_embeddings(
         embedding_model=embedding_model,
