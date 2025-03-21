@@ -23,7 +23,9 @@ def create_document_embeddings(
         case "cut-off":
             embeddings = embedding_model.encode(documents, batch_size=batch_size)
         case "mean":
-            chunked_sentences = chunk_texts(documents, embedding_model.tokenizer, embedding_model.get_max_seq_length())
+            chunked_docs = chunk_texts(documents, embedding_model.tokenizer, embedding_model.get_max_seq_length())
+                        np.mean(embedding_model.encode(doc_chunks, batch_size=batch_size), axis=0)
+            for doc_chunks in chunked_docs
             embeddings = np.array([
                 np.mean(embedding_model.encode(doc_chunks, batch_size=batch_size), axis=0)
                 for doc_chunks in chunked_docs
