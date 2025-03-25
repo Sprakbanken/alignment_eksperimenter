@@ -9,6 +9,7 @@ from align_documents.utils.split import chunk_texts
 from align_documents.types import AggregationStrategy
 import regex as re
 from functools import partial
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,8 @@ def create_document_embeddings(
         case "mean":
             chunked_docs = chunk_texts(documents, embedding_model.tokenizer, embedding_model.get_max_seq_length())
             embeddings = [
-                torch.mean(embedding_model.encode(doc_chunks, batch_size=batch_size, convert_to_tensor=True), axis=0)
-
-                for doc_chunks in chunked_docs
+                torch.mean(embedding_model.encode(doc_chunks, batch_size=batch_size, convert_to_tensor=True, show_progress_bar=False), axis=0)
+                for doc_chunks in tqdm(chunked_docs, desc="Embedding documents")
             ]
         case _:
             raise ValueError("Invalid aggregation strategy")
