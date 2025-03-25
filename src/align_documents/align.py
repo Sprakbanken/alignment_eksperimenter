@@ -21,7 +21,7 @@ def create_document_embeddings(
 ) -> list[torch.Tensor]:
     match aggregation_strategy:
         case "cut-off":
-            embeddings = embedding_model.encode(documents, batch_size=batch_size, convert_to_tensor=True)
+            embeddings = embedding_model.encode(documents, batch_size=batch_size)
         case "mean":
             chunked_docs = chunk_texts(documents, embedding_model.tokenizer, embedding_model.get_max_seq_length())
             embeddings = [
