@@ -1,4 +1,4 @@
-data_dir = ""                             # Path to the directory containing documents to align 
+data_dir = "data"                             # Path to the directory containing documents to align 
 output_dir = "output"                     # Path to the output directory where aligned docs will be stored
 embedding_model = "NbAiLab/nb-sbert-base" # Sentence embedding model to use (local path or huggingface hub repo id)
 embedding_dir = "embeddings"              # Directory to store/read sentence embeddings
