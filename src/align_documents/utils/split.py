@@ -1,6 +1,4 @@
 import transformers
-from sentence_transformers import SentenceTransformer
-import tokenizers
 from semchunk import semchunk
 
 def chunk_texts(
