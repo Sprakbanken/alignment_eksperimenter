@@ -1,5 +1,6 @@
 import align_documents.utils.print as print
 import align_documents.utils.split as split
+import align_documents.utils.get_embedding_model as get_embedding_model
 
 import logging
 from datetime import datetime

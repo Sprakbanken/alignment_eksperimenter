@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:58d0eff06c5d80987b8a4b3bc3a4815f7198b9919234269d82e57d608fe949cb"
+content_hash = "sha256:7164372f2d7a0fcb36d375290dc158eb2719614fb6a4e5addd24f37363f9cbf3"
 
 [[package]]
 name = "accelerate"
@@ -475,6 +475,17 @@ groups = ["default"]
 files = [
     {file = "defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61"},
     {file = "defusedxml-0.7.1.tar.gz", hash = "sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69"},
+]
+
+[[package]]
+name = "dill"
+version = "0.3.9"
+requires_python = ">=3.8"
+summary = "serialize all of Python"
+groups = ["default"]
+files = [
+    {file = "dill-0.3.9-py3-none-any.whl", hash = "sha256:468dff3b89520b474c0397703366b7b95eebe6303f108adf9b19da1f702be87a"},
+    {file = "dill-0.3.9.tar.gz", hash = "sha256:81aa267dddf68cbfe8029c42ca9ec6a4ab3b22371d1c450abc54422577b4512c"},
 ]
 
 [[package]]
@@ -1386,6 +1397,37 @@ files = [
 ]
 
 [[package]]
+name = "mpire"
+version = "2.10.2"
+summary = "A Python package for easy multiprocessing, but faster than multiprocessing"
+groups = ["default"]
+dependencies = [
+    "pygments>=2.0",
+    "pywin32>=301; platform_system == \"Windows\"",
+    "tqdm>=4.27",
+]
+files = [
+    {file = "mpire-2.10.2-py3-none-any.whl", hash = "sha256:d627707f7a8d02aa4c7f7d59de399dec5290945ddf7fbd36cbb1d6ebb37a51fb"},
+    {file = "mpire-2.10.2.tar.gz", hash = "sha256:f66a321e93fadff34585a4bfa05e95bd946cf714b442f51c529038eb45773d97"},
+]
+
+[[package]]
+name = "mpire"
+version = "2.10.2"
+extras = ["dill"]
+summary = "A Python package for easy multiprocessing, but faster than multiprocessing"
+groups = ["default"]
+dependencies = [
+    "mpire==2.10.2",
+    "multiprocess; python_version < \"3.11\"",
+    "multiprocess>=0.70.15; python_version >= \"3.11\"",
+]
+files = [
+    {file = "mpire-2.10.2-py3-none-any.whl", hash = "sha256:d627707f7a8d02aa4c7f7d59de399dec5290945ddf7fbd36cbb1d6ebb37a51fb"},
+    {file = "mpire-2.10.2.tar.gz", hash = "sha256:f66a321e93fadff34585a4bfa05e95bd946cf714b442f51c529038eb45773d97"},
+]
+
+[[package]]
 name = "mpmath"
 version = "1.3.0"
 summary = "Python library for arbitrary-precision floating-point arithmetic"
@@ -1393,6 +1435,26 @@ groups = ["default"]
 files = [
     {file = "mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"},
     {file = "mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f"},
+]
+
+[[package]]
+name = "multiprocess"
+version = "0.70.17"
+requires_python = ">=3.8"
+summary = "better multiprocessing and multithreading in Python"
+groups = ["default"]
+dependencies = [
+    "dill>=0.3.9",
+]
+files = [
+    {file = "multiprocess-0.70.17-pp310-pypy310_pp73-macosx_10_15_x86_64.whl", hash = "sha256:7ddb24e5bcdb64e90ec5543a1f05a39463068b6d3b804aa3f2a4e16ec28562d6"},
+    {file = "multiprocess-0.70.17-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:d729f55198a3579f6879766a6d9b72b42d4b320c0dcb7844afb774d75b573c62"},
+    {file = "multiprocess-0.70.17-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:c2c82d0375baed8d8dd0d8c38eb87c5ae9c471f8e384ad203a36f095ee860f67"},
+    {file = "multiprocess-0.70.17-py310-none-any.whl", hash = "sha256:38357ca266b51a2e22841b755d9a91e4bb7b937979a54d411677111716c32744"},
+    {file = "multiprocess-0.70.17-py311-none-any.whl", hash = "sha256:2884701445d0177aec5bd5f6ee0df296773e4fb65b11903b94c613fb46cfb7d1"},
+    {file = "multiprocess-0.70.17-py312-none-any.whl", hash = "sha256:2818af14c52446b9617d1b0755fa70ca2f77c28b25ed97bdaa2c69a22c47b46c"},
+    {file = "multiprocess-0.70.17-py313-none-any.whl", hash = "sha256:20c28ca19079a6c879258103a6d60b94d4ffe2d9da07dda93fb1c8bc6243f522"},
+    {file = "multiprocess-0.70.17.tar.gz", hash = "sha256:4ae2f11a3416809ebc9a48abfc8b14ecce0652a0944731a1493a3c1ba44ff57a"},
 ]
 
 [[package]]
@@ -2102,7 +2164,7 @@ name = "pywin32"
 version = "308"
 summary = "Python for Window Extensions"
 groups = ["default"]
-marker = "sys_platform == \"win32\" and platform_python_implementation != \"PyPy\""
+marker = "sys_platform == \"win32\" and platform_python_implementation != \"PyPy\" or platform_system == \"Windows\""
 files = [
     {file = "pywin32-308-cp310-cp310-win32.whl", hash = "sha256:796ff4426437896550d2981b9c2ac0ffd75238ad9ea2d3bfa67a1abd546d262e"},
     {file = "pywin32-308-cp310-cp310-win_amd64.whl", hash = "sha256:4fc888c59b3c0bef905ce7eb7e2106a07712015ea1c8234b703a088d46110e8e"},
@@ -2635,6 +2697,21 @@ files = [
     {file = "scipy-1.12.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:95e5c750d55cf518c398a8240571b0e0782c2d5a703250872f36eaf737751338"},
     {file = "scipy-1.12.0-cp312-cp312-win_amd64.whl", hash = "sha256:e646d8571804a304e1da01040d21577685ce8e2db08ac58e543eaca063453e1c"},
     {file = "scipy-1.12.0.tar.gz", hash = "sha256:4bf5abab8a36d20193c698b0f1fc282c1d083c94723902c447e5d2f1780936a3"},
+]
+
+[[package]]
+name = "semchunk"
+version = "3.1.1"
+requires_python = ">=3.9"
+summary = "A fast, lightweight and easy-to-use Python library for splitting text into semantically meaningful chunks."
+groups = ["default"]
+dependencies = [
+    "mpire[dill]",
+    "tqdm",
+]
+files = [
+    {file = "semchunk-3.1.1-py3-none-any.whl", hash = "sha256:148f891e0c46ccfb4026478e3e57399c8497cd89a4c602751fb85cc2caeafa5c"},
+    {file = "semchunk-3.1.1.tar.gz", hash = "sha256:7381708035617801dfa246c8a09602042a5c2b9c3d35944316da22d5238cbf6b"},
 ]
 
 [[package]]
