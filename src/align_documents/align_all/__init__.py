@@ -140,7 +140,7 @@ def main():
 
     embedding_model = get_embedding_model(config["embedding_model"])
 
-    embedding_directory = config["embedding_dir"] / config["embedding_model"]
+    embedding_directory: Path = config["embedding_dir"] / config["embedding_model"]
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
     dfs = []
