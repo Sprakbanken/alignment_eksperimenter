@@ -1,5 +1,8 @@
 import transformers
 from semchunk import semchunk
+import logging
+
+logger = logging.getLogger(__name__)
 
 def chunk_texts(
     texts: list[str],
