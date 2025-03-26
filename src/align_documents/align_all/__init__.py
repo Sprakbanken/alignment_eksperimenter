@@ -123,7 +123,7 @@ def main():
         "--config_file",
         help="Path to the config file",
         type=Path,
-        default=Path(__file__).parent / "alignment_config.toml",
+        default=Path("alignment_config.toml"),
     )
     parser.add_argument("-l", "--log_level", help="Log level", default="INFO")
     args = parser.parse_args()
