@@ -1,12 +1,8 @@
-from argparse import ArgumentParser
 from pathlib import Path
 import os
 
-if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument("-d", "--data_dir", help="Path to the directory containing the documents.", type=Path)
-    args = parser.parse_args()
-
+def print_overview(args, config):
+    # TODO: Check alignment_config.toml?
     if args.data_dir:
         data_dir = args.data_dir
         if not data_dir.exists():
@@ -16,7 +12,6 @@ if __name__ == "__main__":
         if not data_dir:
             raise ValueError("No data directory provided.")
         data_dir = Path(data_dir)
-
     
     print(f"Data directory: {data_dir}")
     for i, e in enumerate(data_dir.iterdir()):
