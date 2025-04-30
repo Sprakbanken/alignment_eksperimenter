@@ -2,8 +2,8 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 # subcommands
-from align_documents.align_all import main as func_align
-from align_documents.print_overview import print_overview as func_info
+from align_documents.commands.align_all import main as align_all
+from align_documents.commands.print_overview import main as print_overview
 
 def set_align_all_parser(subparsers):
     parser = subparsers.add_parser(
@@ -11,7 +11,7 @@ def set_align_all_parser(subparsers):
         help="Align all documents in data directory"
     )
 
-    parser.set_defaults(func=func_align) # TODO: don't import this until required
+    parser.set_defaults(func=align_all) # TODO: don't import this until required
 
     return parser
 
@@ -24,7 +24,7 @@ def set_print_overview_parser(subparsers):
     # TODO: Move/remove --data_dir?
     parser.add_argument("-d", "--data_dir", help="Path to the directory containing the documents.", type=Path)
 
-    parser.set_defaults(func=func_info) # TODO: don't import this until required
+    parser.set_defaults(func=print_overview) # TODO: don't import this until required
 
     return parser
 

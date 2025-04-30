@@ -1,6 +1,6 @@
-from main.parser import get_parser
-from main.logging import setup_logging
-from main.config import get_config
+from align_documents.parser import get_parser
+from align_documents.utils.logging import setup_logging
+from align_documents.utils.config import get_config
 
 def main():
     parser = get_parser()

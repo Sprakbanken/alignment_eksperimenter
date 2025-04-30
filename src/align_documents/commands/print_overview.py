@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-def print_overview(args, config):
+def main(args, config):
     data_dir = Path(args.data_dir or os.environ.get("MALFRID", None) or config["data_dir"])
 
     if not data_dir.exists():
