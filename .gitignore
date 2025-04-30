@@ -7,3 +7,5 @@ build/*
 logs
 
 .pdm-python
+
+alignment_config.toml
