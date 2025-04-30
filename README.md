@@ -26,12 +26,12 @@ eller
 pdm run python -m align_documents.align_all
 ```
 
-# Nynorsk-bokmål alignment
+## Dev setup
 
-## 2021-data
-Se mappa `eksperimenter_2021_data` 
+### Pre-commit
 
-## 2023-data
-TBA
+Med pdm:
+Kjør `pre-commit install` eller  `pdm run pre-commit install`  for å sette opp pre-commit første gang. Deretter vil pre-commit hooks kjøre hver gang du skriver git commit, og evt hindre deg i å commite hvis ikke hooksene passer. (Per idag har vi en ruff-hook som vil gjøre koden compliant med PEP 8)
 
-# Nynorsk-engelsk alignment
+med venv:
+Kjør 
