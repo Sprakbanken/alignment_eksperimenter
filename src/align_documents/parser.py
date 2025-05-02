@@ -1,3 +1,4 @@
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -28,9 +29,16 @@ def set_print_overview_parser(subparsers):
 
     return parser
 
-def get_parser():
-    parser = ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command", required=True)
+def parse_args_():
+    parser = ArgumentParser(
+        prog="align_documents",
+        description=(
+            "Create and align document embeddings."
+            "Command defaults to align_all if no command is given."
+        )
+    )
+
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     parser.add_argument(
         "-c",
@@ -42,7 +50,14 @@ def get_parser():
     parser.add_argument("-l", "--log_level", help="Log level", default="INFO")
 
     parser.set_defaults(func=None)
-    set_align_all_parser(subparsers)
-    set_print_overview_parser(subparsers)
 
-    return parser
+    set_print_overview_parser(subparsers)
+    default_parser = set_align_all_parser(subparsers)
+
+    # Set default subparser when command is omitted.
+    # NOTE: Modifies argv.
+    commands = subparsers.choices.keys()
+    if len(sys.argv) == 1 or sys.argv[1] not in commands:
+        sys.argv.insert(1, default_parser.prog.split()[-1]) # prog ~= "align_documents <subcommand>"
+
+    return parser.parse_args()
