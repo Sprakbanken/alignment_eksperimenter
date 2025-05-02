@@ -12,3 +12,14 @@ embeddings
 alignment_config.toml
 logs
 
+.pdm-python
+
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
