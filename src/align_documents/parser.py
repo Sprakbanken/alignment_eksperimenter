@@ -7,7 +7,7 @@ from align_documents.commands.print_overview import main as print_overview
 
 def set_align_all_parser(subparsers):
     parser = subparsers.add_parser(
-        "align",
+        "align_all",
         help="Align all documents in data directory"
     )
 
