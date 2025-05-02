@@ -1,8 +1,8 @@
-from align_documents.utils import setup_logging
+from align_documents.utils.logging import setup_logging
 from align_documents.utils.get_embedding_model import get_embedding_model
-from align_documents.align_all import (
-    validate_config,
-    read_all_jsonl_files,
+from align_documents.utils.config import validate_config
+from align_documents.utils.dataframe import (
+    jsonl_files_to_df,
     filter_df,
     get_file_info,
 )
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         logger.debug("Number of files: %s", len(df_))
         logger.debug("Formats: %s", df_.format.unique())
 
-        all_website_docs = read_all_jsonl_files(
+        all_website_docs = jsonl_files_to_df(
             source_dir=config["data_dir"], filenames=df_.file_name
         )
         logger.debug("Number of documents: %s", len(all_website_docs))
