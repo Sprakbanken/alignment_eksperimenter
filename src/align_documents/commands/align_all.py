@@ -1,14 +1,9 @@
-from argparse import ArgumentParser
 from pathlib import Path
-import os
 import pandas as pd
 import logging
 from tqdm import tqdm
-from align_documents.utils import setup_logging
 from align_documents.utils.get_embedding_model import get_embedding_model
 from align_documents.align import align
-from align_documents.types import AggregationStrategy
-import tomllib
 
 
 logger = logging.getLogger(__name__)
@@ -68,73 +63,7 @@ def read_all_jsonl_files(source_dir: Path, filenames: pd.Series) -> pd.DataFrame
     return df
 
 
-def validate_config(config: dict) -> dict:
-    if config["data_dir"]:
-        config["data_dir"] = Path(config["data_dir"])
-        if not config["data_dir"].exists():
-            raise ValueError("Data directory does not exist.")
-    else:
-        data_dir = os.environ.get("MALFRID", None)
-        if data_dir is None:
-            raise ValueError(
-                "No data directory provided (no data_dir in config file and no MALFRID environment variable)."
-            )
-        config["data_dir"] = Path(data_dir)
-
-    config_keys = [
-        "output_dir",
-        "embedding_model",
-        "embedding_dir",
-        "batch_size",
-        "aggregation_strategy",
-        "match_threshold",
-        "languages",
-        "number_to_letter_ratio",
-        "min_document_length",
-    ]
-    for key in config_keys:
-        if key not in config:
-            raise ValueError(f"Missing key {key} in config file.")
-
-    config_casts = {
-        "embedding_dir": lambda x: Path(x),
-        "output_dir": lambda x: Path(x),
-        "match_threshold": lambda x: float(x),
-        "aggregation_strategy": lambda x: AggregationStrategy(x),
-        "batch_size": lambda x: int(x),
-        "languages": lambda x: tuple(x),
-        "number_to_letter_ratio": lambda x: float(x),
-        "min_document_length": lambda x: int(x),
-    }
-
-    for key, cast_function in config_casts.items():
-        config[key] = cast_function(config[key])
-
-    if len(config["languages"]) != 2:
-        raise ValueError("languages must (only) contain two languages")
-
-    return config
-
-
-def main():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config_file",
-        help="Path to the config file",
-        type=Path,
-        default=Path("alignment_config.toml"),
-    )
-    parser.add_argument("-l", "--log_level", help="Log level", default="INFO")
-    args = parser.parse_args()
-    setup_logging("align_all", args.log_level)
-
-    with open(args.config_file, "rb") as f:
-        config = tomllib.load(f)
-
-    logger.info(config)
-    validate_config(config)
-
+def main(args, config):
     df = get_file_info(config["data_dir"])
     df = filter_df(df, languages=config["languages"])
 
