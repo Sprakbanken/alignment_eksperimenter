@@ -18,12 +18,27 @@ pdm install
 
 Da kan du kjøre alignment-pipelinen slik:
 ```bash
-python3 -m align_documents.align_all
+python3 -m align_documents align_all
 ```
 
-eller  
+eller med pdm:
 ```bash
-pdm run python -m align_documents.align_all
+pdm run python -m align_documents align_all
+```
+
+`align_documents` uten å spesifiesere sub-kommando blir automatisk tolket som `align_documents align_all`:
+```bash
+python -m align_documents [optional_argument, ...] # => python -m align_documents align_all [optional_argument, ...]
+```
+
+
+For mer informasjon:
+```bash
+pdm run python -m align_documents -h
+```
+eller for en konkret sub-kommando:
+```bash
+pdm run python -m align_documents align_all -h
 ```
 
 # Nynorsk-bokmål alignment
