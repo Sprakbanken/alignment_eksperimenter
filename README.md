@@ -1,44 +1,51 @@
+# Alignment eksperimenter
+
 Forskjellige eksperimenter med text alignment med data fra Målfrid.
 
 Formålet er å få mer nynorsk-bokmål og nynorsk-engelsk parallelldata av høy kvalitet.
 
-Installering
-------------
+## Installering
 
 Du trenger python3.11 og pip.
 
-Lag et virtuelt pythonmiljø med f.eks venv:  
+Lag et virtuelt pythonmiljø med f.eks venv eller pdm.
+
+venv:
 ```bash
 python3 -m venv <navn-på-miljø>     # lag miljø
 . <navn-på-miljø>/bin/activate      # aktiver miljø
 pip install .                       # installer pakker og moduler
 ```
 
-Med pdm:
+pdm:
 ```bash
 pdm install
 ```
 
-Bruk
-----
+## Bruk
 
-Da kan du kjøre alignment-pipelinen slik:
+### Kjør alignment pipelinen
+venv:
 ```bash
 python3 -m align_documents align_all
 ```
 
-eller med pdm:
+pdm:
 ```bash
 pdm run python -m align_documents align_all
 ```
 
+#### Shorthand
 `align_documents` uten å spesifiesere sub-kommando blir automatisk tolket som `align_documents align_all`:
 ```bash
-python -m align_documents # => python -m align_documents align_all
+# Disse to linjene har samme effekt
+python -m align_documents
+python -m align_documents align_all
 ```
+NB: Hvis du vil se dokumentasjon av `align_all` sub-kommandoen ved bruk av `--help`-argumentet, må du fullstendig spesifisere `align_documents align_all --help`. Se [Mer informasjon](#mer-informasjon).
 
-Mer informasjon
----------------
+&nbsp;
+### Mer informasjon
 
 For mer informasjon om bruk og tilgjengelige sub-kommandoer:
 ```bash
@@ -49,8 +56,7 @@ Eller for en konkret sub-kommando, f.eks. for `align_all`:
 python -m align_documents align_all --help
 ```
 
-Data
-----
+## Data
 
 ### Nynorsk-bokmål alignment
 
@@ -61,5 +67,4 @@ Data
     - TBA
 
 ### Nynorsk-engelsk alignment
-------------------------------
 - TBA
