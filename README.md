@@ -1,7 +1,11 @@
+Forskjellige eksperimenter med text alignment med data fra Målfrid.
 
+Formålet er å få mer nynorsk-bokmål og nynorsk-engelsk parallelldata av høy kvalitet.
 
-# Hvordan kjøre filene her:
-Du trenger python3.11 og pip
+Installering
+------------
+
+Du trenger python3.11 og pip.
 
 Lag et virtuelt pythonmiljø med f.eks venv:  
 ```bash
@@ -10,11 +14,13 @@ python3 -m venv <navn-på-miljø>     # lag miljø
 pip install .                       # installer pakker og moduler
 ```
 
-eller bruk f.eks pdm:  
-
+Med pdm:
 ```bash
 pdm install
 ```
+
+Bruk
+----
 
 Da kan du kjøre alignment-pipelinen slik:
 ```bash
@@ -28,25 +34,32 @@ pdm run python -m align_documents align_all
 
 `align_documents` uten å spesifiesere sub-kommando blir automatisk tolket som `align_documents align_all`:
 ```bash
-python -m align_documents [optional_argument, ...] # => python -m align_documents align_all [optional_argument, ...]
+python -m align_documents # => python -m align_documents align_all
 ```
 
+Mer informasjon
+---------------
 
-For mer informasjon:
+For mer informasjon om bruk og tilgjengelige sub-kommandoer:
 ```bash
-pdm run python -m align_documents -h
+python -m align_documents --help
 ```
-eller for en konkret sub-kommando:
+Eller for en konkret sub-kommando, f.eks. for `align_all`:
 ```bash
-pdm run python -m align_documents align_all -h
+python -m align_documents align_all --help
 ```
 
-# Nynorsk-bokmål alignment
+Data
+----
 
-## 2021-data
-Se mappa `eksperimenter_2021_data` 
+### Nynorsk-bokmål alignment
 
-## 2023-data
-TBA
+- 2021-data
+    - Se mappa `eksperimenter_2021_data` 
 
-# Nynorsk-engelsk alignment
+- 2023-data
+    - TBA
+
+### Nynorsk-engelsk alignment
+------------------------------
+- TBA
