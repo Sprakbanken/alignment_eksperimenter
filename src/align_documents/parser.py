@@ -54,10 +54,12 @@ def parse_args_():
     set_print_overview_parser(subparsers)
     default_parser = set_align_all_parser(subparsers)
 
-    # Set default subparser when command is omitted.
-    # NOTE: Modifies argv.
-    commands = subparsers.choices.keys()
-    if len(sys.argv) == 1 or sys.argv[1] not in commands:
-        sys.argv.insert(1, default_parser.prog.split()[-1]) # prog ~= "align_documents <subcommand>"
+    args = parser.parse_args()
 
-    return parser.parse_args()
+    # Set default subparser when command is omitted, unless -h/--help is supplied.
+    # NOTE: Modifies argv.
+    if args.command is None and "help" not in args:
+        sys.argv.insert(1, default_parser.prog.split()[-1]) # prog ~= "align_documents <subcommand>"
+        args = parser.parse_args()
+
+    return args
