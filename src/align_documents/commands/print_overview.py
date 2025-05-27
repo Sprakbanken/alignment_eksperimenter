@@ -97,34 +97,6 @@ def get_stats_per_doc(
     return stats_per_doc, data_columns
 
 def print_overview(overview: dict) -> None:
-    """
-    Print overview:
-    ```
-        averages_of_averages:
-            all:
-                ...
-            per_lang:
-                ...
-
-        site_stats (total_sites=<...>, total_docs=<...>):
-            <site_1> (<n_docs>):
-                langs:
-                    <lang_1> (<n_docs>):
-                        avg_data_column_1: <avg_data_column_1>
-                        avg_data_column_2: <...>
-                        ...
-
-                    <lang2> (<n_docs>):
-                        ...
-                    ...
-                ...
-
-            <site_2> (<n_docs>):
-                ...
-            ...
-    ````
-    """
-
     # TODO:
     #  - Better formatting:
     #       - indents
@@ -132,8 +104,6 @@ def print_overview(overview: dict) -> None:
 
     print(json.dumps(overview, indent=4))
 
-#   TODO:
-#    - Optimize if slow
 def get_overview(
     stats_per_doc: pd.DataFrame,
     data_columns: Iterable | None = None
@@ -142,10 +112,10 @@ def get_overview(
         if cols is None:
             return {}
 
-        means = df[cols].mean()
-        return means.add_prefix("mean_").to_dict()
+        return df[cols].describe().to_dict()
 
     # Aggregate stats per site per lang
+    #   TODO: - Optimize if slow
 
     sites = stats_per_doc["domain"].value_counts()
     stats_per_site = {}
