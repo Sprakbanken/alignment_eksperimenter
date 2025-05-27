@@ -3,66 +3,26 @@ from __future__ import annotations
 import json
 from logging import getLogger
 from typing import Iterable
-from torch import Tensor
-from tqdm import tqdm
-# import line_profiler
-import pandas as pd
-
 from pathlib import Path
 
+from torch import Tensor
+from tqdm import tqdm
+import pandas as pd
 from sentence_transformers import SentenceTransformer
+
+from align_documents.commands.align_all import (
+    get_embedding_model,
+    read_all_jsonl_files,
+    get_file_info,
+)
 
 
 logger = getLogger(__name__)
 
 
-# TODO 2:
-def get_embedding_model(embedding_model_id: str):
-    import torch
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info("Using device: %s", device)
-
-    embedding_model = SentenceTransformer(embedding_model_id, device=device)
-
-    basemodel_max_len = embedding_model[0].auto_model.config.max_position_embeddings
-    if basemodel_max_len != embedding_model.get_max_seq_length():
-        logger.info(
-            "Setting max_seq_length to %s (was %s)",
-            basemodel_max_len,
-            embedding_model.get_max_seq_length(),
-        )
-        embedding_model.max_seq_length = basemodel_max_len
-
-    return embedding_model
-
-# TODO 2: Import this from main project (and maybe move that out to utils module)
-#           It's copied from align_all/__init__.py
-def read_all_jsonl_files(source_dir: Path, filenames: pd.Series) -> pd.DataFrame:
-    dfs = []
-    for e in filenames:
-        e = source_dir / e
-        dfs.append(pd.read_json(e, lines=True))
-    df = pd.concat(dfs)
-    df.index = range(len(df))
-    df["fulltext_joined"] = df.fulltext.apply(lambda x: "\n".join(x))
-    return df
-
-# TODO 2
-def get_file_info(data_dir: Path) -> pd.DataFrame:
-    info = sorted([e.name[:-6].split("_") + [e.name] for e in data_dir.glob("*.jsonl")])
-    df = pd.DataFrame(info, columns=["website", "language", "format", "file_name"])
-    logger.info("Found %s files in %s", len(df), data_dir)
-    logger.info("Number of unique websites: %s", len(df.website.unique()))
-    logger.info("Unique languages:          %s", df.language.unique())
-    logger.info("Unique formats:            %s", df.format.unique())
-    return df
-
-
 # TODO:
 # - Make separate input overview and output/embedding/alignment overview
-# - print_overview should probably also support generating
-#    from already compiled embeddings if possible
+# - Embedding-output stats?
 
 # .jsonl example line (input-dataset):
 #
@@ -102,9 +62,6 @@ def get_stats_per_doc(
     stats_per_doc = pd.DataFrame()
 
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
-        # filepath: Path = data_dir / file_info["file_name"]
-        # df_file = pd.read_json(filepath, lines=True)
-
         website_df = read_all_jsonl_files(data_dir, df_["file_name"])
 
         if embedding_model:
@@ -175,14 +132,12 @@ def print_overview(overview: dict) -> None:
 
     print(json.dumps(overview, indent=4))
 
+#   TODO:
+#    - Optimize if slow
 def get_overview(
     stats_per_doc: pd.DataFrame,
     data_columns: Iterable | None = None
 ) -> dict:
-
-    #   TODO:
-    #    - Optimize if slow
-
     def _get_data_col_stats(df: pd.DataFrame, cols: Iterable | None) -> dict:
         if cols is None:
             return {}
