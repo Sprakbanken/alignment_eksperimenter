@@ -9,7 +9,6 @@ from tqdm import tqdm
 import pandas as pd
 
 from pathlib import Path
-import os
 
 from sentence_transformers import SentenceTransformer
 
@@ -223,8 +222,7 @@ def main(args, config):
     # TODO: --exclude & --include-only flags
     #           Example: --exclude language:eng
     #               Maybe json better due to url characters
-    #       Should we prioritize config or environ? Do we even need/use environ?
-    data_dir = Path(args.data_dir or os.environ.get("MALFRID", None) or config["data_dir"])
+    data_dir = Path(args.data_dir or config["data_dir"])
 
     # TODO 4 (?)
     if not data_dir.exists():
@@ -234,6 +232,7 @@ def main(args, config):
     config["output_dir"].mkdir(exist_ok=True, parents=True)
 
     try:
+        # TODO: Only get the tokenizer directly to save memory.
         embedding_model = get_embedding_model(config["embedding_model"])
     except:
         logger.warning("Failed to get embedding model from config file. Skipping model-dependent stats.")
