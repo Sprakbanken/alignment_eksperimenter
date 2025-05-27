@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "ruff", "dev"]
+groups = ["default", "dev"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:f7534cc0f140a2807b5005cd6e559f8094b9ea3e36bdd939b62bebf7b458ee9c"
+content_hash = "sha256:33f6e1612985f8ab6ef89a89c8cfaed555499d19faa78001e8000e594da74919"
 
 [[package]]
 name = "certifi"
