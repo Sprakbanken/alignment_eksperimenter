@@ -1,9 +1,25 @@
-venv_målfrid
-embeddings
 *__pycache__*
 *.egg-info/
-output
 build/*
+
+.pdm-python
+.venv
+
+output
+!data/output
+embeddings
+
+alignment_config.toml
 logs
 
 .pdm-python
+
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
