@@ -142,18 +142,18 @@ def get_overview(
         "sites": stats_per_site,
     }
 
-# @line_profiler.profile
 def main(args, config):
     # TODO: --exclude & --include-only flags
     #           Example: --exclude language:eng
     #               Maybe json better due to url characters
+    #       Move config and arg verification into shared entry-point or get_config (in other modules too)
+    #           --data-dir arg currently doesn't get caught by get_config verification
+
     data_dir = Path(args.data_dir or config["data_dir"])
 
-    # TODO 4 (?)
     if not data_dir.exists():
         raise FileNotFoundError("Provided data directory does not exist")
 
-    # TODO 4: Move into shared entry-point (in other modules too)
     config["output_dir"].mkdir(exist_ok=True, parents=True)
 
     try:
@@ -162,9 +162,6 @@ def main(args, config):
     except:
         logger.warning("Failed to get embedding model from config file. Skipping model-dependent stats.")
         embedding_model = None
-
-    # TODO 3 IMPORTANT: Add hash to filenames based on dataset hash
-    #                   - Do we make dataset hashes already?
 
     # Full data
     stats_per_doc, data_columns = get_stats_per_doc(data_dir, embedding_model=embedding_model)
