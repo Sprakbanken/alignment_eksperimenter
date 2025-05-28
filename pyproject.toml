@@ -9,6 +9,7 @@ dependencies = [
     "semchunk>=3.2.1",
     "tqdm>=4.67.1",
     "torch>=2.7.0",
+    "rapidfuzz>=3.13.0",
 ]
 
 [tool.pdm.dev-dependencies]
