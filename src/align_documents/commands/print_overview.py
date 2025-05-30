@@ -60,7 +60,14 @@ def get_stats_per_doc(
         website_df = read_all_jsonl_files(data_dir, df_["file_name"])
 
         if tokenizer:
-            tokens_list = tokenizer( website_df["fulltext_joined"].tolist() )['input_ids']
+            # NB: This is very slow. Most of print_overview's time is spent here.
+            tokens_list = tokenizer(
+                website_df["fulltext_joined"].tolist(),
+                # Minor speed optimizations:
+                return_token_type_ids=False,
+                return_attention_mask=False,
+            )['input_ids']
+
             assert isinstance(tokens_list, list)
             assert len(tokens_list) == len(website_df)
 
@@ -69,7 +76,6 @@ def get_stats_per_doc(
             website_df["fulltext_tokens"] = pd.Series(index=website_df.index)
             website_df["fulltext_tokens"] = token_counts
 
-        # TODO: Optimize this this if too slow
         website_df["fulltext_lines"] = pd.Series([len(lines) for lines in website_df["fulltext"]])
         website_df["fulltext_words"] = pd.Series(len(text.split()) for text in website_df["fulltext_joined"])
         website_df["fulltext_characters"] = pd.Series(len(text) for text in website_df["fulltext_joined"]) # TODO: Find out if outputted `\n`s are encoded or not
@@ -77,7 +83,6 @@ def get_stats_per_doc(
         website_df.drop(["fulltext", "fulltext_joined"], axis='columns', inplace=True)
 
         stats_per_doc = pd.concat([stats_per_doc, website_df])
-
 
 
     # TODO:  Maybe don't assume all files have the same data columns?
@@ -105,7 +110,6 @@ def get_overview(
         return df[cols].describe().to_dict()
 
     # Aggregate stats per site per lang
-    #   TODO: - Optimize if slow
 
     sites = stats_per_doc["domain"].value_counts()
     stats_per_site = {}
