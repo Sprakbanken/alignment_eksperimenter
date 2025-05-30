@@ -79,9 +79,9 @@ def get_stats_per_doc(
         stats_per_doc = pd.concat([stats_per_doc, website_df])
         # We do this for every website, rather than once after the loop,
         # in case some websites differ in initial columns.
-        data_columns.add(website_df.columns.difference(initial_columns))
+        data_columns.update(website_df.columns.difference(initial_columns))
 
-    return stats_per_doc, data_columns
+    return stats_per_doc, list(data_columns)
 
 def print_overview(overview: dict) -> None:
     # TODO:
