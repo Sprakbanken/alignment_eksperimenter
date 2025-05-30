@@ -38,22 +38,13 @@ logger = getLogger(__name__)
 #   ]
 # }
 
-def _get_info_from_filenames(data_dir):
-    # TODO: Probably remove this block.
-    logger.info(f"Data directory: {data_dir}")
-    documents_paths = [file for file in data_dir.iterdir() if file.suffix == ".jsonl"]
-    if not documents_paths:
-        raise FileNotFoundError(f"No .jsonl files found")
-
-    # columns: ["website", "language", "format", "file_name"]
-    return get_file_info(data_dir)
 
 def get_stats_per_doc(
     data_dir: Path,
     tokenizer: PreTrainedTokenizerBase | None = None
 ) -> tuple[pd.DataFrame, Iterable]:
 
-    files_df = _get_info_from_filenames(data_dir)
+    files_df = get_file_info(data_dir)
     stats_per_doc = pd.DataFrame()
 
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
