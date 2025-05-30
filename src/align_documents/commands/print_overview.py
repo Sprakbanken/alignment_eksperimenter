@@ -20,8 +20,7 @@ logger = getLogger(__name__)
 
 
 # TODO:
-# - Make separate input overview and output/embedding/alignment overview
-# - Embedding-output stats?
+#   - Make separate input overview and output/embedding/alignment overview
 
 # .jsonl example line (input-dataset):
 #
@@ -153,14 +152,14 @@ def main(args, config):
     stats_per_doc, data_columns = get_stats_per_doc(data_dir, tokenizer=tokenizer)
     stats_per_doc_path = config["output_dir"]/"stats_per_doc.jsonl"
 
-    stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records") # TODO 3
+    stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records")
     logger.info(f"Full data saved to `{stats_per_doc_path}`")
 
     # Aggregates
     overview = get_overview(stats_per_doc, data_columns=data_columns)
     overview_path = config["output_dir"]/"overview.json"
 
-    with open(overview_path, "w") as f: # TODO 3
+    with open(overview_path, "w") as f:
         f.write(json.dumps(overview))
         logger.info(f"Overview saved to `{overview_path}`")
 
