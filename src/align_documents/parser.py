@@ -19,11 +19,21 @@ def set_align_all_parser(subparsers):
 def set_print_overview_parser(subparsers):
     parser = subparsers.add_parser(
         "info",
-        help="Print dataset info"
+        help="Calculate dataset stats, and save to json files"
     )
 
     # TODO: Move/remove --data_dir?
-    parser.add_argument("-d", "--data_dir", help="Path to the directory containing the documents.", type=Path)
+    parser.add_argument(
+        "-d", "--data_dir",
+        type=Path,
+        help="Path to the directory containing the documents.",
+    )
+
+    parser.add_argument(
+        "-p", "--print-overview",
+        action="store_true",
+        help="Print dataset overview/aggregate stats to console",
+    )
 
     parser.set_defaults(func=print_overview) # TODO: don't import this until required
 

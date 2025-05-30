@@ -163,7 +163,7 @@ def main(args, config):
         f.write(json.dumps(overview))
         logger.info(f"Overview saved to `{overview_path}`")
 
-    print_overview(overview)
+    if args.print_overview:
+        print_overview(overview)
+        print(f"\n- Saved to `{overview_path}`") # Printing this here too for visibility
 
-    # Printing this here too for visibility
-    print(f"\n- Saved to `{overview_path}`")
