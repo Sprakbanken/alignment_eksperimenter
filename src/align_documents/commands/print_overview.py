@@ -5,13 +5,12 @@ from logging import getLogger
 from typing import Iterable
 from pathlib import Path
 
-from torch import Tensor
 from tqdm import tqdm
 import pandas as pd
-from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from align_documents.commands.align_all import (
-    get_embedding_model,
     read_all_jsonl_files,
     get_file_info,
 )
@@ -51,12 +50,8 @@ def _get_info_from_filenames(data_dir):
 
 def get_stats_per_doc(
     data_dir: Path,
-    embedding_model: SentenceTransformer | None = None
+    tokenizer: PreTrainedTokenizerBase | None = None
 ) -> tuple[pd.DataFrame, Iterable]:
-
-    # TODO(1):
-    # if embedding_model:
-    #     embedding_model.max_seq_length = 0
 
     files_df = _get_info_from_filenames(data_dir)
     stats_per_doc = pd.DataFrame()
@@ -64,20 +59,15 @@ def get_stats_per_doc(
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
         website_df = read_all_jsonl_files(data_dir, df_["file_name"])
 
-        if embedding_model:
-            # TODO IMPORTANT: Implement this.
-            pass
-            # keys: ["input_ids", "token_type_ids", "attention_mask"]
-            # TODO(1): - Need to tokenize the entire text here, in chunks.
-            #              - By default doesn't support chunking; only cutoff?
-            # tokens: dict[str, Tensor] = embedding_model.tokenize(website_df["fulltext_joined"])
-            # token_lengths = [tensor.numel() for tensor in tokens["input_ids"]]
-            # print(f"{token_lengths=}")
-            # continue
-            # # print(tokens)
-            # token_counts = len(tokens["input_ids"])
-            # website_df["n_tokens"] = pd.Series(index=website_df.index)
-            # website_df["n_tokens"] = token_counts
+        if tokenizer:
+            tokens_list = tokenizer( website_df["fulltext_joined"].tolist() )['input_ids']
+            assert isinstance(tokens_list, list)
+            assert len(tokens_list) == len(website_df)
+
+            token_counts = [len(tokens) for tokens in tokens_list]
+
+            website_df["fulltext_tokens"] = pd.Series(index=website_df.index)
+            website_df["fulltext_tokens"] = token_counts
 
         # TODO: Optimize this this if too slow
         website_df["fulltext_lines"] = pd.Series([len(lines) for lines in website_df["fulltext"]])
@@ -157,14 +147,13 @@ def main(args, config):
     config["output_dir"].mkdir(exist_ok=True, parents=True)
 
     try:
-        # TODO: Only get the tokenizer directly to save memory.
-        embedding_model = get_embedding_model(config["embedding_model"])
+        tokenizer = AutoTokenizer.from_pretrained(config["embedding_model"])
     except:
-        logger.warning("Failed to get embedding model from config file. Skipping model-dependent stats.")
-        embedding_model = None
+        logger.warning("Failed to get tokenizer based on config's 'embedding_model'. Skipping model-dependent stats.")
+        tokenizer = None
 
     # Full data
-    stats_per_doc, data_columns = get_stats_per_doc(data_dir, embedding_model=embedding_model)
+    stats_per_doc, data_columns = get_stats_per_doc(data_dir, tokenizer=tokenizer)
     stats_per_doc_path = config["output_dir"]/"stats_per_doc.jsonl"
 
     stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records") # TODO 3
