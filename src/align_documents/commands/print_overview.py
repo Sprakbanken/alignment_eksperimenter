@@ -45,10 +45,14 @@ def get_stats_per_doc(
 ) -> tuple[pd.DataFrame, Iterable]:
 
     files_df = get_file_info(data_dir)
+
+    # Return values:
     stats_per_doc = pd.DataFrame()
+    data_columns = set()
 
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
         website_df = read_all_jsonl_files(data_dir, df_["file_name"])
+        initial_columns = website_df.columns
 
         if tokenizer:
             # NB: This is very slow. Most of print_overview's time is spent here.
@@ -74,11 +78,9 @@ def get_stats_per_doc(
         website_df.drop(["fulltext", "fulltext_joined"], axis='columns', inplace=True)
 
         stats_per_doc = pd.concat([stats_per_doc, website_df])
-
-
-    # TODO:  Maybe don't assume all files have the same data columns?
-    sample_df = read_all_jsonl_files(data_dir, files_df["file_name"].iloc[0:1])
-    data_columns = stats_per_doc.columns.difference(sample_df.columns)
+        # We do this for every website, rather than once after the loop,
+        # in case some websites differ in initial columns.
+        data_columns.add(website_df.columns.difference(initial_columns))
 
     return stats_per_doc, data_columns
 
