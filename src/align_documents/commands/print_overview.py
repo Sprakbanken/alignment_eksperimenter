@@ -83,16 +83,16 @@ def get_stats_per_doc(
 
     return stats_per_doc, list(data_columns)
 
-def print_overview(overview: dict | pd.DataFrame) -> None:
+def print_data(data: dict | pd.DataFrame) -> None:
     # TODO:
     #  - Better formatting:
     #       - indents
     #       - decimal points
 
-    if isinstance(overview, dict):
-        print(json.dumps(overview, indent=4))
-    elif isinstance(overview, pd.DataFrame):
-        json_str = overview.to_json(orient='records')
+    if isinstance(data, dict):
+        print(json.dumps(data, indent=4))
+    elif isinstance(data, pd.DataFrame):
+        json_str = data.to_json(orient='records')
         assert json_str is not None
 
         # Simple workaround because DataFrame.to_dict() doesn't convert
@@ -164,7 +164,7 @@ def main(args, config):
     logger.info(f"Full data saved to `{stats_per_doc_path}`")
 
     if args.print_full:
-        print_overview(stats_per_doc)
+        print_data(stats_per_doc)
 
     # Aggregates
     overview = get_overview(stats_per_doc, data_columns=data_columns)
@@ -175,6 +175,6 @@ def main(args, config):
         logger.info(f"Overview saved to `{overview_path}`")
 
     if args.print_overview:
-        print_overview(overview)
+        print_data(overview)
         print(f"\n- Saved to `{overview_path}`") # Printing this here too for visibility
 
