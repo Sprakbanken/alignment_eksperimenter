@@ -22,6 +22,7 @@ pdm:
 pdm install
 ```
 
+
 ## Bruk
 
 ### Kjør alignment pipelinen
@@ -55,6 +56,14 @@ Eller for en konkret sub-kommando, f.eks. for `align_all`:
 ```bash
 python -m align_documents align_all --help
 ```
+
+
+## Dev setup
+
+### Pre-commit
+
+Kjør `pdm run pre-commit install` eller `pre-commit install` for å sette opp pre-commit første gang. Deretter vil pre-commit hooks kjøre hver gang du skriver git commit, og evt hindre deg i å commite hvis ikke hooksene passer. (Per idag har vi en ruff-hook som vil gjøre koden compliant med PEP 8)
+
 
 ## Data
 

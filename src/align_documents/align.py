@@ -1,10 +1,8 @@
 from pathlib import Path
-from numpy.typing import NDArray
 import pandas as pd
 import logging
 from sentence_transformers import SentenceTransformer, util
 import torch
-import numpy as np
 from align_documents.utils.split import chunk_texts
 from align_documents.types import AggregationStrategy
 import regex as re
@@ -24,9 +22,21 @@ def create_document_embeddings(
         case "cut-off":
             embeddings = embedding_model.encode(documents, batch_size=batch_size)
         case "mean":
-            chunked_docs = chunk_texts(documents, embedding_model.tokenizer, embedding_model.get_max_seq_length())
+            chunked_docs = chunk_texts(
+                documents,
+                embedding_model.tokenizer,
+                embedding_model.get_max_seq_length(),
+            )
             embeddings = [
-                torch.mean(embedding_model.encode(doc_chunks, batch_size=batch_size, convert_to_tensor=True, show_progress_bar=False), axis=0)
+                torch.mean(
+                    embedding_model.encode(
+                        doc_chunks,
+                        batch_size=batch_size,
+                        convert_to_tensor=True,
+                        show_progress_bar=False,
+                    ),
+                    axis=0,
+                )
                 for doc_chunks in tqdm(chunked_docs, desc="Embedding documents")
             ]
         case _:
