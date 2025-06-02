@@ -54,7 +54,7 @@ def get_stats_per_doc(
         initial_columns = website_df.columns
 
         if tokenizer:
-            # NB: This is very slow. Most of print_overview's time is spent here.
+            # NB: This is very slow. Most of the info command's time is spent here.
             tokens_list = tokenizer(
                 website_df["fulltext_joined"].tolist(),
                 # Minor speed optimizations:

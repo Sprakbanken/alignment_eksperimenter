@@ -4,7 +4,7 @@ from pathlib import Path
 
 # subcommands
 from align_documents.commands.align_all import main as align_all
-from align_documents.commands.print_overview import main as print_overview
+from align_documents.commands.info import main as info
 
 def set_align_all_parser(subparsers):
     parser = subparsers.add_parser(
@@ -16,7 +16,7 @@ def set_align_all_parser(subparsers):
 
     return parser
 
-def set_print_overview_parser(subparsers):
+def set_info_parser(subparsers):
     parser = subparsers.add_parser(
         "info",
         help="Calculate dataset stats, and save to json files"
@@ -41,7 +41,7 @@ def set_print_overview_parser(subparsers):
         help="Print full dataset stats to console",
     )
 
-    parser.set_defaults(func=print_overview) # TODO: don't import this until required
+    parser.set_defaults(func=info) # TODO: don't import this until required
 
     return parser
 
@@ -67,7 +67,7 @@ def parse_args_():
 
     parser.set_defaults(func=None)
 
-    set_print_overview_parser(subparsers)
+    set_info_parser(subparsers)
     default_parser = set_align_all_parser(subparsers)
 
     args = parser.parse_args()
