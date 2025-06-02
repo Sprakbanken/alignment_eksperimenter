@@ -83,13 +83,21 @@ def get_stats_per_doc(
 
     return stats_per_doc, list(data_columns)
 
-def print_overview(overview: dict) -> None:
+def print_overview(overview: dict | pd.DataFrame) -> None:
     # TODO:
     #  - Better formatting:
     #       - indents
     #       - decimal points
 
-    print(json.dumps(overview, indent=4))
+    if isinstance(overview, dict):
+        print(json.dumps(overview, indent=4))
+    elif isinstance(overview, pd.DataFrame):
+        json_str = overview.to_json(orient='records')
+        assert json_str is not None
+
+        # Simple workaround because DataFrame.to_dict() doesn't convert
+        # `Timestamp`s to json-serializable values
+        print(json.dumps(json.loads(json_str), indent=4))
 
 def get_overview(
     stats_per_doc: pd.DataFrame,
@@ -154,6 +162,9 @@ def main(args, config):
 
     stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records")
     logger.info(f"Full data saved to `{stats_per_doc_path}`")
+
+    if args.print_full:
+        print_overview(stats_per_doc)
 
     # Aggregates
     overview = get_overview(stats_per_doc, data_columns=data_columns)

@@ -35,6 +35,12 @@ def set_print_overview_parser(subparsers):
         help="Print dataset overview/aggregate stats to console",
     )
 
+    parser.add_argument(
+        "-P", "--print-full",
+        action="store_true",
+        help="Print full dataset stats to console",
+    )
+
     parser.set_defaults(func=print_overview) # TODO: don't import this until required
 
     return parser
