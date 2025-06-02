@@ -86,7 +86,6 @@ def get_stats_per_doc(
 def print_data(data: dict | pd.DataFrame) -> None:
     # TODO:
     #  - Better formatting:
-    #       - indents
     #       - decimal points
 
     if isinstance(data, dict):
@@ -139,7 +138,6 @@ def get_overview(
 def main(args, config):
     # TODO: --exclude & --include-only flags
     #           Example: --exclude language:eng
-    #               Maybe json better due to url characters
     #       Move config and arg verification into shared entry-point or get_config (in other modules too)
     #           --data-dir arg currently doesn't get caught by get_config verification
 
