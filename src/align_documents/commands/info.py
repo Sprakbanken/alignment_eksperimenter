@@ -19,9 +19,6 @@ from align_documents.commands.align_all import (
 logger = getLogger(__name__)
 
 
-# TODO:
-#   - Make separate input overview and output/embedding/alignment overview
-
 # .jsonl example line (input-dataset):
 #
 # {
@@ -84,10 +81,6 @@ def get_stats_per_doc(
     return stats_per_doc, list(data_columns)
 
 def print_data(data: dict | pd.DataFrame) -> None:
-    # TODO:
-    #  - Better formatting:
-    #       - decimal points
-
     if isinstance(data, dict):
         print(json.dumps(data, indent=4))
     elif isinstance(data, pd.DataFrame):
@@ -136,9 +129,7 @@ def get_overview(
     }
 
 def main(args, config):
-    # TODO: --exclude & --include-only flags
-    #           Example: --exclude language:eng
-    #       Move config and arg verification into shared entry-point or get_config (in other modules too)
+    # TODO: Move config and arg verification into shared entry-point or get_config (in other modules too)
     #           --data-dir arg currently doesn't get caught by get_config verification
 
     data_dir = Path(args.data_dir or config["data_dir"])
