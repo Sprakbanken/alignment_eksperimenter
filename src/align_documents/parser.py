@@ -45,6 +45,38 @@ def set_info_parser(subparsers):
 
     return parser
 
+def set_config_override_args(parser: ArgumentParser):
+    parser.add_argument("-d", "--data-dir",
+                        help="Input-dataset directory")
+
+    parser.add_argument("-o", "--output-dir",
+                        help="Output directory")
+
+    parser.add_argument("-m", "--model", dest="embedding_model",
+                        help="Embedding model. Tokenizer is also set based on this.")
+
+    parser.add_argument("-e", "--embedding-dir",
+                        help="Embedding directory (both input and output)")
+
+    parser.add_argument("-b", "--batch-size",
+                        help="Batch size for encoding")
+
+    parser.add_argument("-a", "--aggregation-strategy",
+                        help="Aggregation strategy for chunked embeddings")
+
+    parser.add_argument("-t", "--match-threshold",
+                        help="Threshold for matching documents")
+
+    # TODO: Better help-string for this:
+    parser.add_argument("-l", "--languages",
+                        help="Languages to align. Comma-separated list of language codes.")
+
+    parser.add_argument("--number-to-letter-ratio",
+                        help="Ratio of numbers to letters in the document (discard if greater)")
+
+    parser.add_argument("--min-document-length",
+                        help="Minimum number of characters in a document (discard if less)")
+
 def parse_args_():
     parser = ArgumentParser(
         prog="align_documents",
