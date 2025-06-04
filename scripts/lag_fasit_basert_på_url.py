@@ -6,9 +6,20 @@ from collections import defaultdict
 from rapidfuzz import fuzz
 from concurrent.futures import ThreadPoolExecutor
 from align_documents.utils.config import get_config
+from align_documents.utils.logging import setup_logging
+import logging
+import argparse
 
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Create document pairs based on URL similarity')
+    parser.add_argument('--log_level', default='INFO', 
+                      choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                      help='Set the logging level')
+    args = parser.parse_args()
+    setup_logging("make_pairs_based_on_url", args.log_level)
     config = get_config(config_file="alignment_config.toml")
 
     source_p = config.get("data_dir")
@@ -19,6 +30,11 @@ if __name__ == "__main__":
 
     lang_code_1= languages[0]
     lang_code_2 = languages[1]
+
+    output_dir = config.get("output_dir")
+    output_dir = output_dir / "url_pairs"
+    output_dir.mkdir(exist_ok=True, parents=True) # lager mappa og evt foreldremappa hvis den ikke finnes
+
 
     #file_group_regex = re.compile(r"(.*?)(?:_{lang_code1}|_{lang_code_2})_html")
     file_group_regex = re.compile(rf"(.*?)(?:_{lang_code_1}|_{lang_code_2})_html")
@@ -71,9 +87,6 @@ if __name__ == "__main__":
                 })
         return matches
 
-    output_dir = Path("o")
-    output_dir.mkdir(exist_ok=True)
-
     def contains_dates_or_many_numbers(url):
         return (
         bool(re.search(r'/\d{4}(/|$)', url)) or  #match years
@@ -114,7 +127,6 @@ if __name__ == "__main__":
         else:
             result_df_filtered = pd.DataFrame()
         if len(result_df_filtered) > 0:
-            result_df_filtered.to_csv(output_dir / f"{domain}.csv", index=False)
+            result_df_filtered.to_csv(output_dir / f"{lang_code_1}_{lang_code_2}" / f"{domain}.csv", index=False)
         else:
-            print(f"No valid matches found for {domain}.")
-    
+            continue
