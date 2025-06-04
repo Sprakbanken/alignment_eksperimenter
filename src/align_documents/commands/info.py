@@ -129,6 +129,16 @@ def get_overview(
         "sites": stats_per_site,
     }
 
+def get_tokenizer(embedding_model: str):
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(embedding_model)
+    except Exception:
+        logger.warning(
+            "Failed to get tokenizer based on config's 'embedding_model'. Skipping model-dependent stats."
+        )
+        tokenizer = None
+
+    return tokenizer
 
 def main(args, config):
     # TODO: Move config and arg verification into shared entry-point or get_config (in other modules too)
@@ -141,13 +151,7 @@ def main(args, config):
 
     config["output_dir"].mkdir(exist_ok=True, parents=True)
 
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(config["embedding_model"])
-    except Exception:
-        logger.warning(
-            "Failed to get tokenizer based on config's 'embedding_model'. Skipping model-dependent stats."
-        )
-        tokenizer = None
+    tokenizer = get_tokenizer(config["embedding_model"]) if args.use_tokenizer else None
 
     # Full data
     stats_per_doc, data_columns = get_stats_per_doc(data_dir, tokenizer=tokenizer)

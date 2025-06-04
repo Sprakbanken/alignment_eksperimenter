@@ -41,6 +41,12 @@ def set_info_parser(subparsers):
         help="Print full dataset stats to console",
     )
 
+    parser.add_argument(
+        "-t", "--use-tokenizer",
+        action="store_true",
+        help="Include tokenizer-dependent stats. Warning: may greatly increase processing time"
+    )
+
     parser.set_defaults(func=info) # TODO: don't import this until required
 
     return parser
