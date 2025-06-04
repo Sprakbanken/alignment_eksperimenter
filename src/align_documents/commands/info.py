@@ -65,7 +65,6 @@ def get_stats_per_doc(
 
             token_counts = [len(tokens) for tokens in tokens_list]
 
-            website_df["fulltext_tokens"] = pd.Series(index=website_df.index)
             website_df["fulltext_tokens"] = token_counts
 
         website_df["fulltext_lines"] = pd.Series(
