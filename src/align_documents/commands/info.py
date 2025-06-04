@@ -11,8 +11,11 @@ from transformers import AutoTokenizer
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from align_documents.commands.align_all import (
-    read_all_jsonl_files,
     get_file_info,
+)
+
+from align_documents.utils.dataframe import (
+    jsonl_files_to_df,
 )
 
 
@@ -36,10 +39,8 @@ logger = getLogger(__name__)
 
 
 def get_stats_per_doc(
-    data_dir: Path,
-    tokenizer: PreTrainedTokenizerBase | None = None
+    data_dir: Path, tokenizer: PreTrainedTokenizerBase | None = None
 ) -> tuple[pd.DataFrame, Iterable]:
-
     files_df = get_file_info(data_dir)
 
     # Return values:
@@ -47,7 +48,7 @@ def get_stats_per_doc(
     data_columns = set()
 
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
-        website_df = read_all_jsonl_files(data_dir, df_["file_name"])
+        website_df = jsonl_files_to_df(data_dir, df_["file_name"])
         initial_columns = website_df.columns
 
         if tokenizer:
@@ -57,7 +58,7 @@ def get_stats_per_doc(
                 # Minor speed optimizations:
                 return_token_type_ids=False,
                 return_attention_mask=False,
-            )['input_ids']
+            )["input_ids"]
 
             assert isinstance(tokens_list, list)
             assert len(tokens_list) == len(website_df)
@@ -67,11 +68,17 @@ def get_stats_per_doc(
             website_df["fulltext_tokens"] = pd.Series(index=website_df.index)
             website_df["fulltext_tokens"] = token_counts
 
-        website_df["fulltext_lines"] = pd.Series([len(lines) for lines in website_df["fulltext"]])
-        website_df["fulltext_words"] = pd.Series(len(text.split()) for text in website_df["fulltext_joined"])
-        website_df["fulltext_characters"] = pd.Series(len(text) for text in website_df["fulltext_joined"]) # TODO: Find out if outputted `\n`s are encoded or not
+        website_df["fulltext_lines"] = pd.Series(
+            [len(lines) for lines in website_df["fulltext"]]
+        )
+        website_df["fulltext_words"] = pd.Series(
+            len(text.split()) for text in website_df["fulltext_joined"]
+        )
+        website_df["fulltext_characters"] = pd.Series(
+            len(text) for text in website_df["fulltext_joined"]
+        )
 
-        website_df.drop(["fulltext", "fulltext_joined"], axis='columns', inplace=True)
+        website_df.drop(["fulltext", "fulltext_joined"], axis="columns", inplace=True)
 
         stats_per_doc = pd.concat([stats_per_doc, website_df])
         # We do this for every website, rather than once after the loop,
@@ -80,20 +87,21 @@ def get_stats_per_doc(
 
     return stats_per_doc, list(data_columns)
 
+
 def print_data(data: dict | pd.DataFrame) -> None:
     if isinstance(data, dict):
         print(json.dumps(data, indent=4))
     elif isinstance(data, pd.DataFrame):
-        json_str = data.to_json(orient='records')
+        json_str = data.to_json(orient="records")
         assert json_str is not None
 
         # Simple workaround because DataFrame.to_dict() doesn't convert
         # `Timestamp`s to json-serializable values
         print(json.dumps(json.loads(json_str), indent=4))
 
+
 def get_overview(
-    stats_per_doc: pd.DataFrame,
-    data_columns: Iterable | None = None
+    stats_per_doc: pd.DataFrame, data_columns: Iterable | None = None
 ) -> dict:
     def _get_data_col_stats(df: pd.DataFrame, cols: Iterable | None) -> dict:
         if cols is None:
@@ -116,7 +124,7 @@ def get_overview(
         for lang, per_lang in per_site.groupby("lang"):
             site_overview["langs"][lang] = {
                 "n_docs": len(per_lang),
-                "stats": _get_data_col_stats(per_lang, data_columns)
+                "stats": _get_data_col_stats(per_lang, data_columns),
             }
 
         stats_per_site[site] = site_overview
@@ -127,6 +135,7 @@ def get_overview(
         "stats": _get_data_col_stats(stats_per_doc, data_columns),
         "sites": stats_per_site,
     }
+
 
 def main(args, config):
     # TODO: Move config and arg verification into shared entry-point or get_config (in other modules too)
@@ -141,13 +150,15 @@ def main(args, config):
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(config["embedding_model"])
-    except:
-        logger.warning("Failed to get tokenizer based on config's 'embedding_model'. Skipping model-dependent stats.")
+    except Exception:
+        logger.warning(
+            "Failed to get tokenizer based on config's 'embedding_model'. Skipping model-dependent stats."
+        )
         tokenizer = None
 
     # Full data
     stats_per_doc, data_columns = get_stats_per_doc(data_dir, tokenizer=tokenizer)
-    stats_per_doc_path = config["output_dir"]/"stats_per_doc.jsonl"
+    stats_per_doc_path = config["output_dir"] / "stats_per_doc.jsonl"
 
     stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records")
     logger.info(f"Full data saved to `{stats_per_doc_path}`")
@@ -157,7 +168,7 @@ def main(args, config):
 
     # Aggregates
     overview = get_overview(stats_per_doc, data_columns=data_columns)
-    overview_path = config["output_dir"]/"overview.json"
+    overview_path = config["output_dir"] / "overview.json"
 
     with open(overview_path, "w") as f:
         f.write(json.dumps(overview))
@@ -165,5 +176,6 @@ def main(args, config):
 
     if args.print_overview:
         print_data(overview)
-        print(f"\n- Saved to `{overview_path}`") # Printing this here too for visibility
-
+        print(
+            f"\n- Saved to `{overview_path}`"
+        )  # Printing this here too for visibility
