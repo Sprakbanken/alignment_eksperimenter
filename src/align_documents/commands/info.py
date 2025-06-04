@@ -67,15 +67,9 @@ def get_stats_per_doc(
 
             website_df["fulltext_tokens"] = token_counts
 
-        website_df["fulltext_lines"] = pd.Series(
-            [len(lines) for lines in website_df["fulltext"]]
-        )
-        website_df["fulltext_words"] = pd.Series(
-            len(text.split()) for text in website_df["fulltext_joined"]
-        )
-        website_df["fulltext_characters"] = pd.Series(
-            len(text) for text in website_df["fulltext_joined"]
-        )
+        website_df["fulltext_lines"] = website_df.fulltext.apply(len)
+        website_df["fulltext_words"] = website_df.fulltext_joined.apply(lambda text: len(text.split()))
+        website_df["fulltext_characters"] = website_df.fulltext_joined.apply(len)
 
         website_df.drop(["fulltext", "fulltext_joined"], axis="columns", inplace=True)
 
