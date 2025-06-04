@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 
-def get_unique_domain_pairs(input_path, output_dir, output_file, limit=20):
+def get_unique_domain_pairs(input_path, lang1, lang2, output_dir, output_file, limit=20):
     seen_domains = set()
     unique_pairs = []
 
@@ -12,11 +12,11 @@ def get_unique_domain_pairs(input_path, output_dir, output_file, limit=20):
         for line in infile:
 
             pair = json.loads(line)
-            domain_nno = pair.get("domain_nno")
-            domain_nob = pair.get("domain_nob")
+            f"domain_{lang1}" = pair.get(f"domain_{lang1}")
+            f"domain_{lang2}" = pair.get(f"domain_{lang2}")
 
-            domain_key = frozenset([domain_nno, domain_nob])
-            if domain_nno and domain_nob and domain_key not in seen_domains:
+            domain_key = frozenset([f"domain_{lang1}", f"domain_{lang2}"])
+            if f"domain_{lang1}" and f"domain_{lang2}" and domain_key not in seen_domains:
                 unique_pairs.append(pair)
                 seen_domains.add(domain_key)
 
@@ -31,6 +31,8 @@ def get_unique_domain_pairs(input_path, output_dir, output_file, limit=20):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', '-i', required=True)
+    parser.add_argument('--lang1', '-l1')
+    parser.add_argument('--lang2', '-l2')
     parser.add_argument('--output_dir', '-o')
     parser.add_argument('--output_file', '-of')
     parser.add_argument('--limit', '-l', type=int, default=20)
