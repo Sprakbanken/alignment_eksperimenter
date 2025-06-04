@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 negative_pairs_config = {
     "min_threshold": 0.5,
     "pairs_per_website": 2,
-    "total_pairs": 150,
+    "total_pairs": 100,
 }
 
 
@@ -128,7 +128,6 @@ def find_negative_doc_pairs(
 
 
 if __name__ == "__main__":
-    print("hallo")
     parser = ArgumentParser()
     parser.add_argument(
         "-c",
