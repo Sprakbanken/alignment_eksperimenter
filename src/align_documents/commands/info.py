@@ -21,6 +21,8 @@ from align_documents.utils.dataframe import (
 
 logger = getLogger(__name__)
 
+INFO_FILENAME_FULL_DATA = "stats_per_doc.jsonl"
+INFO_FILENAME_OVERVIEW = "overview.json"
 
 # .jsonl example line (input-dataset):
 #
@@ -155,7 +157,7 @@ def main(args, config):
 
     # Full data
     stats_per_doc, data_columns = get_stats_per_doc(data_dir, tokenizer=tokenizer)
-    stats_per_doc_path = config["output_dir"] / "stats_per_doc.jsonl"
+    stats_per_doc_path = config["output_dir"] / INFO_FILENAME_FULL_DATA
 
     stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records")
     logger.info(f"Full data saved to `{stats_per_doc_path}`")
@@ -165,7 +167,7 @@ def main(args, config):
 
     # Aggregates
     overview = get_overview(stats_per_doc, data_columns=data_columns)
-    overview_path = config["output_dir"] / "overview.json"
+    overview_path = config["output_dir"] / INFO_FILENAME_OVERVIEW
 
     with open(overview_path, "w") as f:
         f.write(json.dumps(overview))
