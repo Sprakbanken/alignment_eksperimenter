@@ -173,6 +173,3 @@ def main(args, config):
 
     if args.print_overview:
         print_data(overview)
-        print(
-            f"\n- Saved to `{overview_path}`"
-        )  # Printing this here too for visibility
