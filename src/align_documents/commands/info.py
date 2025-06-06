@@ -24,6 +24,12 @@ logger = getLogger(__name__)
 INFO_FILENAME_FULL_DATA = "stats_per_doc.jsonl"
 INFO_FILENAME_OVERVIEW = "overview.json"
 
+# Level 0 multi-index groups
+METADATA_COLS = "Metadata"
+DATA_COLS = "Data"
+STAT_COLS = "Stats" # Stats calculated by this command
+
+
 # .jsonl example line (input-dataset):
 #
 # {
@@ -42,21 +48,26 @@ INFO_FILENAME_OVERVIEW = "overview.json"
 
 def get_stats_per_doc(
     data_dir: Path, tokenizer: PreTrainedTokenizerBase | None = None
-) -> tuple[pd.DataFrame, Iterable]:
+) -> pd.DataFrame:
     files_df = get_file_info(data_dir)
 
     # Return values:
     stats_per_doc = pd.DataFrame()
-    data_columns = set()
 
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
         website_df = jsonl_files_to_df(data_dir, df_["file_name"])
-        initial_columns = website_df.columns
+        data_cols = ["fulltext", "fulltext_joined"]
+
+        # Group the columns to know which ones to process later.
+        website_df = pd.concat({
+            METADATA_COLS: website_df.drop(data_cols, axis="columns"),
+            DATA_COLS: website_df[data_cols]
+        }, axis='columns')
 
         if tokenizer:
             # NB: This is very slow. Most of the info command's time is spent here.
             tokens_list = tokenizer(
-                website_df["fulltext_joined"].tolist(),
+                website_df[DATA_COLS, "fulltext_joined" ].tolist(),
                 # Minor speed optimizations:
                 return_token_type_ids=False,
                 return_attention_mask=False,
@@ -67,20 +78,17 @@ def get_stats_per_doc(
 
             token_counts = [len(tokens) for tokens in tokens_list]
 
-            website_df["fulltext_tokens"] = token_counts
+            website_df[STAT_COLS, "fulltext_tokens"] = token_counts
 
-        website_df["fulltext_lines"] = website_df.fulltext.apply(len)
-        website_df["fulltext_words"] = website_df.fulltext_joined.apply(lambda text: len(text.split()))
-        website_df["fulltext_characters"] = website_df.fulltext_joined.apply(len)
+        website_df[STAT_COLS, "fulltext_lines"] = website_df[DATA_COLS, "fulltext"].apply(len)
+        website_df[STAT_COLS, "fulltext_words"] = website_df[DATA_COLS, "fulltext_joined"].apply(lambda text: len(text.split()))
+        website_df[STAT_COLS, "fulltext_characters"] = website_df[DATA_COLS, "fulltext_joined"].apply(len)
 
-        website_df.drop(["fulltext", "fulltext_joined"], axis="columns", inplace=True)
+        website_df.drop(DATA_COLS, axis="columns", inplace=True)
 
         stats_per_doc = pd.concat([stats_per_doc, website_df])
-        # We do this for every website, rather than once after the loop,
-        # in case some websites differ in initial columns.
-        data_columns.update(website_df.columns.difference(initial_columns))
 
-    return stats_per_doc, list(data_columns)
+    return stats_per_doc
 
 
 def print_data(data: dict | pd.DataFrame) -> None:
@@ -96,37 +104,37 @@ def print_data(data: dict | pd.DataFrame) -> None:
 
 
 def get_overview(
-    stats_per_doc: pd.DataFrame, data_columns: Iterable | None = None
+    stats_per_doc: pd.DataFrame
 ) -> dict:
-    def _get_data_col_stats(df: pd.DataFrame, cols: Iterable | None) -> dict:
-        if cols is None:
+    def _get_stat_col_stats(df: pd.DataFrame) -> dict:
+        if STAT_COLS not in stats_per_doc.columns:
             return {}
 
-        return df[cols].describe().to_dict()
+        return df[STAT_COLS].describe().to_dict()
 
     # Aggregate stats per site per lang
 
     stats_per_site = {}
 
-    for site, per_site in stats_per_doc.groupby("domain"):
+    for site, per_site in stats_per_doc.groupby((METADATA_COLS, "domain")):
         site_overview = {
             "n_docs": len(per_site),
-            "stats": _get_data_col_stats(per_site, data_columns),
+            "stats": _get_stat_col_stats(per_site),
             "langs": {},
         }
 
-        for lang, per_lang in per_site.groupby("lang"):
+        for lang, per_lang in per_site.groupby((METADATA_COLS, "lang")):
             site_overview["langs"][lang] = {
                 "n_docs": len(per_lang),
-                "stats": _get_data_col_stats(per_lang, data_columns),
+                "stats": _get_stat_col_stats(per_lang),
             }
 
         stats_per_site[site] = site_overview
 
     return {
-        "n_domains": stats_per_doc["domain"].nunique(),
+        "n_domains": stats_per_doc[METADATA_COLS, "domain"].nunique(),
         "n_docs": len(stats_per_doc),
-        "stats": _get_data_col_stats(stats_per_doc, data_columns),
+        "stats": _get_stat_col_stats(stats_per_doc),
         "sites": stats_per_site,
     }
 
@@ -155,7 +163,7 @@ def main(args, config):
     tokenizer = get_tokenizer(config["embedding_model"]) if args.use_tokenizer else None
 
     # Full data
-    stats_per_doc, data_columns = get_stats_per_doc(data_dir, tokenizer=tokenizer)
+    stats_per_doc = get_stats_per_doc(data_dir, tokenizer=tokenizer)
     stats_per_doc_path = config["output_dir"] / INFO_FILENAME_FULL_DATA
 
     stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records")
@@ -165,7 +173,7 @@ def main(args, config):
         print_data(stats_per_doc)
 
     # Aggregates
-    overview = get_overview(stats_per_doc, data_columns=data_columns)
+    overview = get_overview(stats_per_doc)
     overview_path = config["output_dir"] / INFO_FILENAME_OVERVIEW
 
     with open(overview_path, "w") as f:
