@@ -106,7 +106,6 @@ def get_overview(
 
     # Aggregate stats per site per lang
 
-    sites = stats_per_doc["domain"].value_counts()
     stats_per_site = {}
 
     for site, per_site in stats_per_doc.groupby("domain"):
@@ -125,7 +124,7 @@ def get_overview(
         stats_per_site[site] = site_overview
 
     return {
-        "n_sites": len(sites),
+        "n_domains": stats_per_doc["domain"].nunique(),
         "n_docs": len(stats_per_doc),
         "stats": _get_data_col_stats(stats_per_doc, data_columns),
         "sites": stats_per_site,
