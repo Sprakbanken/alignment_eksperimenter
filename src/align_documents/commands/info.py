@@ -95,12 +95,7 @@ def print_data(data: dict | pd.DataFrame) -> None:
     if isinstance(data, dict):
         print(json.dumps(data, indent=4))
     elif isinstance(data, pd.DataFrame):
-        json_str = data.to_json(orient="records")
-        assert json_str is not None
-
-        # Simple workaround because DataFrame.to_dict() doesn't convert
-        # `Timestamp`s to json-serializable values
-        print(json.dumps(json.loads(json_str), indent=4))
+        print(data)
 
 
 def get_overview(
