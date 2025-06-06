@@ -21,7 +21,7 @@ from align_documents.utils.dataframe import (
 
 logger = getLogger(__name__)
 
-INFO_FILENAME_FULL_DATA = "stats_per_doc.jsonl"
+INFO_FILENAME_FULL_DATA = "stats_per_doc.csv"
 INFO_FILENAME_OVERVIEW = "overview.json"
 
 # Level 0 multi-index groups
@@ -166,7 +166,7 @@ def main(args, config):
     stats_per_doc = get_stats_per_doc(data_dir, tokenizer=tokenizer)
     stats_per_doc_path = config["output_dir"] / INFO_FILENAME_FULL_DATA
 
-    stats_per_doc.to_json(stats_per_doc_path, lines=True, orient="records")
+    stats_per_doc.to_csv(stats_per_doc_path)
     logger.info(f"Full data saved to `{stats_per_doc_path}`")
 
     if args.print_full:
