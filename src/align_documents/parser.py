@@ -6,6 +6,8 @@ from pathlib import Path
 from align_documents.commands.align_all import main as align_all
 from align_documents.commands.info import main as info
 
+from align_documents.commands.info import INFO_FILENAME_FULL_DATA
+
 def set_align_all_parser(subparsers):
     parser = subparsers.add_parser(
         "align_all",
@@ -19,7 +21,11 @@ def set_align_all_parser(subparsers):
 def set_info_parser(subparsers):
     parser = subparsers.add_parser(
         "info",
-        help="Calculate dataset stats, and save to json files"
+        help=(
+            "Calculate dataset stats, and save to json files."
+           f" Use --overwrite to overwrite an already-existing {INFO_FILENAME_FULL_DATA},"
+            "otherwise stats will not be recalculated. Other files are not protected."
+        )
     )
 
     # TODO: Move/remove --data_dir?
@@ -44,7 +50,17 @@ def set_info_parser(subparsers):
     parser.add_argument(
         "-t", "--use-tokenizer",
         action="store_true",
-        help="Include tokenizer-dependent stats. Warning: may greatly increase processing time"
+        help=(
+            "Include tokenizer-dependent stats."
+           f" Has no effect if {INFO_FILENAME_FULL_DATA} is not being written."
+            "\nWarning: may greatly increase processing time"
+        )
+    )
+
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=f"Overwrite already-existing {INFO_FILENAME_FULL_DATA}."
     )
 
     parser.set_defaults(func=info) # TODO: don't import this until required

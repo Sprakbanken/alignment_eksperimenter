@@ -155,22 +155,27 @@ def main(args, config):
 
     config["output_dir"].mkdir(exist_ok=True, parents=True)
 
-    tokenizer = get_tokenizer(config["embedding_model"]) if args.use_tokenizer else None
 
     # Full data
-    stats_per_doc = get_stats_per_doc(data_dir, tokenizer=tokenizer)
-    stats_per_doc_path = config["output_dir"] / INFO_FILENAME_FULL_DATA
+    stats_per_doc_path: Path = config["output_dir"] / INFO_FILENAME_FULL_DATA
 
-    stats_per_doc.to_csv(stats_per_doc_path)
-    logger.info(f"Full data saved to `{stats_per_doc_path}`")
+    if not args.overwrite and stats_per_doc_path.exists():
+        logger.info(f"Using already existing file: {stats_per_doc_path}")
+        stats_per_doc = pd.read_csv(stats_per_doc_path, header=[0,1])
+    else:
+        tokenizer = get_tokenizer(config["embedding_model"]) if args.use_tokenizer else None
+        stats_per_doc = get_stats_per_doc(data_dir, tokenizer=tokenizer)
+        stats_per_doc.to_csv(stats_per_doc_path)
+        logger.info(f"Full data saved to `{stats_per_doc_path}`")
 
     if args.print_full:
         print_data(stats_per_doc)
 
-    # Aggregates
-    overview = get_overview(stats_per_doc)
-    overview_path = config["output_dir"] / INFO_FILENAME_OVERVIEW
 
+    # Aggregate stats
+    overview_path: Path = config["output_dir"] / INFO_FILENAME_OVERVIEW
+
+    overview = get_overview(stats_per_doc)
     with open(overview_path, "w") as f:
         f.write(json.dumps(overview))
         logger.info(f"Overview saved to `{overview_path}`")
