@@ -67,6 +67,11 @@ python -m align_documents align_all --help
 -  `align_all`: Kjør alignment-pipelinen
 -  `info`: Analyser input-datasettet
 
+## Scripts
+The script `scripts/find_negative_documents.py` finds pairs of documents that are pretty similar, but expected to not be actually parallell (i.e above min_threshold, but less than the match threshold in `alignment_config.yaml`). We use this to find assumed negative document pairs for our manually anntoated documents.
+
+
+
 ## Dev setup
 
 ### Pre-commit
