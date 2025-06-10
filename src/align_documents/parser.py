@@ -22,7 +22,7 @@ def set_info_parser(subparsers):
     parser = subparsers.add_parser(
         "info",
         help=(
-            "Calculate dataset stats, and save to json files."
+            "Calculate dataset stats, and save to json/csv files."
            f" Use --overwrite to overwrite an already-existing {INFO_FILENAME_FULL_DATA},"
             "otherwise stats will not be recalculated. Other files are not protected."
         )
