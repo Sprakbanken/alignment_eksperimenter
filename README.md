@@ -25,6 +25,7 @@ pdm install
 
 ## Bruk
 
+
 ### Kjør alignment pipelinen
 venv:
 ```bash
@@ -45,8 +46,14 @@ python -m align_documents align_all
 ```
 NB: Hvis du vil se dokumentasjon av `align_all` sub-kommandoen ved bruk av `--help`-argumentet, må du fullstendig spesifisere `align_documents align_all --help`. Se [Mer informasjon](#mer-informasjon).
 
-&nbsp;
+
 ### Mer informasjon
+
+Synopsis:
+
+```bash
+python -m align_documents [args] <subcommand> [subcommand-args]
+```
 
 For mer informasjon om bruk og tilgjengelige sub-kommandoer:
 ```bash
@@ -56,7 +63,9 @@ Eller for en konkret sub-kommando, f.eks. for `align_all`:
 ```bash
 python -m align_documents align_all --help
 ```
-
+#### Tilgjengelige sub-kommandoer
+-  `align_all`: Kjør alignment-pipelinen
+-  `info`: Analyser input-datasettet
 
 ## Dev setup
 
