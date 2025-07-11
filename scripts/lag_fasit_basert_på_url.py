@@ -1,14 +1,14 @@
-from pathlib import Path
-import pandas as pd
-import os
+import argparse
+import logging
 import re
 from collections import defaultdict
-from rapidfuzz import fuzz
 from concurrent.futures import ThreadPoolExecutor
+
+import pandas as pd
+from rapidfuzz import fuzz
+
 from align_documents.utils.config import get_config
 from align_documents.utils.logging import setup_logging
-import logging
-import argparse
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +23,8 @@ if __name__ == "__main__":
     config = get_config(config_file="alignment_config.toml")
 
     source_p = config.get("data_dir")
-    print("Source path", source_p)
 
     languages = config.get("languages")
-    print("Languages", languages)
 
     lang_code_1= languages[0]
     lang_code_2 = languages[1]
@@ -36,7 +34,6 @@ if __name__ == "__main__":
     output_dir.mkdir(exist_ok=True, parents=True) # lager mappa og evt foreldremappa hvis den ikke finnes
 
 
-    #file_group_regex = re.compile(r"(.*?)(?:_{lang_code1}|_{lang_code_2})_html")
     file_group_regex = re.compile(rf"(.*?)(?:_{lang_code_1}|_{lang_code_2})_html")
     lang_code_regex = re.compile(r'/([a-z]{2}-[A-Z]{2}|nynorsk)/')
 
@@ -48,14 +45,14 @@ if __name__ == "__main__":
         if match:
             domain_groups[match.group(1)].append(file)
         else:
-            print(f"Regex did not match for file: {file}")
+            logger.warning(f"File {file.name} does not match expected pattern and will be skipped.")
 
     grouped_files = [
         (domain, tuple(files))
         for domain, files in domain_groups.items()
         if len(files) > 1
     ]
-    print(f"Grouped domains: {len(grouped_files)}")
+    logger.info(f"Grouped domains: {len(grouped_files)}")
 
     def extract_language_code(url):
         match = lang_code_regex.search(url)
@@ -96,7 +93,7 @@ if __name__ == "__main__":
     )
     #process each domain
     for domain, files in grouped_files:
-        print(f"Processing: {domain}")
+        logger.info(f"Processing domain: {domain}")
         df_lang_code_1 = pd.DataFrame()
         df_lang_code_2 = pd.DataFrame()
 
@@ -117,7 +114,7 @@ if __name__ == "__main__":
                 all_matches.extend(matched_rows)
 
         result_df = pd.DataFrame(all_matches)
-        print(f"Matches found for {domain}: {len(result_df)}")
+        logger.info(f"Matches found for {domain}: {len(result_df)}")
 
         if len(result_df) > 0:
             result_df_filtered = result_df[
