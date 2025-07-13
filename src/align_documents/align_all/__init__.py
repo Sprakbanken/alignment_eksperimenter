@@ -3,18 +3,38 @@ import pandas as pd
 import logging
 from tqdm import tqdm
 from align_documents.utils.get_embedding_model import get_embedding_model
+from align_documents.utils.config import get_config
 from align_documents.utils.dataframe import (
     get_file_info,
     filter_df,
     jsonl_files_to_df,
 )
 from align_documents.align import align
+import argparse
 
 
 logger = logging.getLogger(__name__)
 
 
-def main(args, config):
+def get_args():
+    parser = argparse.ArgumentParser(
+        prog="align_documents", description=("Create and align document embeddings.")
+    )
+
+    parser.add_argument(
+        "-c",
+        "--config_file",
+        help="Path to the config file for alignment",
+        type=Path,
+        default=Path("alignment_config.toml"),
+    )
+    parser.add_argument("-l", "--log_level", help="Log level", default="INFO")
+    return parser.parse_args()
+
+
+def main():
+    args = get_args()
+    config = get_config(args.config_file)
     df = get_file_info(config["data_dir"])
     df = filter_df(df, languages=config["languages"])
 
