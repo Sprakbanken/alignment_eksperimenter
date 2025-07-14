@@ -1,24 +1,37 @@
-# Alignment eksperimenter
-
-Forskjellige eksperimenter med text alignment med data fra Målfrid.
-
-Formålet er å få mer nynorsk-bokmål og nynorsk-engelsk parallelldata av høy kvalitet.
+# Alignment experiments
+Some experiments with bitext mining based on data from the Målfrid project.  
+The goal is to get more high quality Norwegian Nynorsk-Bokmål and Norwegian Nynorsk-English parallel data. 
 
 ## Install/setup
 You can easily install this project with tools like pdm or uv. 
+```bash
+uv sync
+# OR
+pdm install
+```
+Alternatively, manually create a virtual environment and install with pip: 
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install . 
+```
 
 ## Run alignment pipeline 
-These are equivalent
+
+These are equivalent (prefix with `uv run` or `pdm run`)
 ```bash
 align_all
 python -m align_documents
 python -m align_documents.align_all
 ```
 
+The alignment pipeline expects a config file. See our sample config at [alignment_config.toml](alignment_config.toml)  
+**TODO**: explain config file parameters
+
 ## Run info script
 This script will read the alignment config file and calculate info about the source data for alignment
 
-These are equivalent
+These are equivalent (prefix with `uv run` or `pdm run`)
 ```bash
 info
 python -m align_documents.info

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from logging import getLogger
-from typing import Iterable
 from pathlib import Path
 
 from tqdm import tqdm
@@ -59,7 +58,6 @@ def get_stats_per_doc(
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
         logger.debug("Calculating stats for website %s", website)
         website_df = jsonl_files_to_df(data_dir, df_["file_name"])
-        logger.debug("h")
         data_cols = ["fulltext", "fulltext_joined"]
 
         # Group the columns to know which ones to process later.
@@ -192,7 +190,7 @@ def get_args():
             "\nWarning: may greatly increase processing time"
         ),
     )
-    parser.add_argument("--log_level", choices=["DEBUG", "INFO"], default="DEBUG")
+    parser.add_argument("--log_level", choices=["DEBUG", "INFO"], default="INFO")
     parser.add_argument(
         "--overwrite",
         action="store_true",
@@ -204,8 +202,10 @@ def get_args():
 def main():
     args = get_args()
     setup_logging("info", log_level=args.log_level)
+    logger.info(args)
 
     config = get_config(args.config_file)
+    logger.info(config)
     data_dir = config["data_dir"]
 
     if not data_dir.exists():

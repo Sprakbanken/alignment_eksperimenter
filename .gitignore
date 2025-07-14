@@ -4,6 +4,7 @@ build/*
 
 .pdm-python
 .venv
+._venv
 
 output
 !data/output
