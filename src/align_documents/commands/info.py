@@ -164,7 +164,7 @@ def main(args, config):
     else:
         tokenizer = get_tokenizer(config["embedding_model"]) if args.use_tokenizer else None
         stats_per_doc = get_stats_per_doc(data_dir, tokenizer=tokenizer)
-        stats_per_doc.to_csv(stats_per_doc_path)
+        stats_per_doc.to_csv(stats_per_doc_path, index=False)
         logger.info(f"Full data saved to `{stats_per_doc_path}`")
 
     if args.print_full:
