@@ -42,12 +42,6 @@ def set_info_parser(subparsers):
     )
 
     parser.add_argument(
-        "-P", "--print-full",
-        action="store_true",
-        help="Print full dataset stats to console",
-    )
-
-    parser.add_argument(
         "-t", "--use-tokenizer",
         action="store_true",
         help=(
