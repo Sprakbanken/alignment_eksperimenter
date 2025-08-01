@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from logging import getLogger
-from typing import Iterable
 from pathlib import Path
 
 from tqdm import tqdm
