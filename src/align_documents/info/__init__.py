@@ -8,11 +8,8 @@ from transformers import AutoTokenizer
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 import argparse
 
-from align_documents.align_all import (
-    get_file_info,
-)
-
 from align_documents.utils.dataframe import (
+    get_file_info,
     jsonl_files_to_df,
 )
 from align_documents.utils.config import get_config
