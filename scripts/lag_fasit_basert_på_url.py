@@ -77,9 +77,8 @@ if __name__ == "__main__":
     file_group_regex = re.compile(rf"(.*?)(?:_{lang_code_1}|_{lang_code_2})_{mimetype}")
     lang_code_regex = re.compile(r'/([a-z]{2}-[A-Z]{2}|nynorsk)/')
 
-    all_files = source_p.iterdir()
     domain_groups = defaultdict(list)
-    for file in all_files:
+    for file in source_p.iterdir():
         match = file_group_regex.match(file.stem)
         if match:
             domain_groups[match.group(1)].append(file)
