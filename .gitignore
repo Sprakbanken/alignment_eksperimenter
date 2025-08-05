@@ -9,7 +9,8 @@ build/*
 output
 !data/output
 embeddings
-data/maalfrid_2025
+maalfrid_2025
+maalfrid_2025_embeddings
 
 alignment_config.toml
 logs

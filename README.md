@@ -47,18 +47,6 @@ The script `scripts/find_negative_documents.py` finds pairs of documents that ar
 
 ### Pre-commit
 
-Kjør `pdm run pre-commit install` eller `pre-commit install` for å sette opp pre-commit første gang. Deretter vil pre-commit hooks kjøre hver gang du skriver git commit, og evt hindre deg i å commite hvis ikke hooksene passer. (Per idag har vi en ruff-hook som vil gjøre koden compliant med PEP 8)
+Run `pre-commit install` (or `python -m pre-commit install`) to set up pre-commit first time.
+Then, the pre-commit hooks will run each time you create a commit.
 
-
-## Data
-
-### Nynorsk-bokmål alignment
-
-- 2021-data
-    - Se mappa `eksperimenter_2021_data` 
-
-- 2023-data
-    - TBA
-
-### Nynorsk-engelsk alignment
-- TBA
