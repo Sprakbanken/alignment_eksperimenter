@@ -52,7 +52,9 @@ def jsonl_files_to_df(source_dir: Path, filenames: pd.Series) -> pd.DataFrame:
     dfs = []
     for e in filenames:
         e = source_dir / e
+        logger.debug(e)
         dfs.append(pd.read_json(e, lines=True))
+    logger.debug("Read all files from filenames")
     df = pd.concat(dfs)
     df.index = range(len(df))
     df["fulltext_joined"] = df.fulltext.apply(lambda x: "\n".join(x))
