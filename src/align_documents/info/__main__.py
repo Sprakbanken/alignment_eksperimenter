@@ -1,3 +1,3 @@
-from align_documents.print_overview import main
+from align_documents.info import main
 
 main()
