@@ -31,10 +31,10 @@ The alignment pipeline expects a config file. See our sample config:
 data_dir = "data/maalfrid_2025"                     # Path to the directory containing documents to align 
 output_dir = "data/output/maalfrid_2025_aligned"    # Path to the output directory where aligned docs will be stored
 embedding_model = "BAAI/bge-m3"                     # Sentence embedding model to use (local path or huggingface hub repo id)
-embedding_dir = "data/maalfrid_2025_embeddings"     # Directory to store/read embeddings
-batch_size = 8                                      # Batch size for encoding documents
-aggregation_strategy = "mean"                       # Aggregation strategy for document embeddings (when input is longer than models max_len)
-match_threshold = 0.95                              # Threshold for matching documents
+embedding_dir = "data/maalfrid_2025_embeddings"     # Directory to read/write document embeddings
+batch_size = 8                                      # Batch size when encoding documents
+aggregation_strategy = "mean"                       # "cut-off" or "mean". Aggregation strategy for document embeddings (when input is longer than model max_len)
+match_threshold = 0.95                              # Cosine similarity threshold for matching documents
 languages = ["nno", "nob"]                          # Languages to align (must be a list of length 2)
 number_to_letter_ratio = 0.3                        # Ratio of numbers to letters in the document (discard if greater)
 min_document_length = 100                           # Minimum number of characters in a document (discard if less)

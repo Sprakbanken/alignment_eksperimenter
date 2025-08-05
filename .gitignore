@@ -11,7 +11,6 @@ data
 !data/output
 
 
-alignment_config.toml
 logs
 
 .pdm-python
