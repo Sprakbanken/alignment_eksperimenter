@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from logging import getLogger
 from pathlib import Path
@@ -102,11 +100,8 @@ def get_stats_per_doc(
     return stats_per_doc
 
 
-def print_data(data: dict | pd.DataFrame) -> None:
-    if isinstance(data, dict):
-        print(json.dumps(data, indent=4))
-    elif isinstance(data, pd.DataFrame):
-        print(data)
+def _print_overview(data: dict) -> None:
+    print(json.dumps(data, indent=4))
 
 
 def get_overview(stats_per_doc: pd.DataFrame) -> dict:
@@ -224,11 +219,8 @@ def main():
             get_tokenizer(config["embedding_model"]) if args.use_tokenizer else None
         )
         stats_per_doc = get_stats_per_doc(data_dir, tokenizer=tokenizer)
-        stats_per_doc.to_csv(stats_per_doc_path)
+        stats_per_doc.to_csv(stats_per_doc_path, index=False)
         logger.info(f"Full data saved to `{stats_per_doc_path}`")
-
-    if args.print_full:
-        print_data(stats_per_doc)
 
     # Aggregate stats
     overview_path: Path = config["output_dir"] / INFO_FILENAME_OVERVIEW
@@ -239,4 +231,4 @@ def main():
         logger.info(f"Overview saved to `{overview_path}`")
 
     if args.print_overview:
-        print_data(overview)
+        _print_overview(overview)
