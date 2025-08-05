@@ -7,10 +7,9 @@ build/*
 ._venv
 
 output
+data
 !data/output
-embeddings
-maalfrid_2025
-maalfrid_2025_embeddings
+
 
 alignment_config.toml
 logs
