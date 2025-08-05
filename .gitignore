@@ -4,10 +4,12 @@ build/*
 
 .pdm-python
 .venv
+._venv
 
 output
 !data/output
 embeddings
+data/maalfrid_2025
 
 alignment_config.toml
 logs

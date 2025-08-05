@@ -1,73 +1,44 @@
-# Alignment eksperimenter
+# Alignment experiments
+Some experiments with bitext mining based on data from the Målfrid project.  
+The goal is to get more high quality Norwegian Nynorsk-Bokmål and Norwegian Nynorsk-English parallel data. 
 
-Forskjellige eksperimenter med text alignment med data fra Målfrid.
-
-Formålet er å få mer nynorsk-bokmål og nynorsk-engelsk parallelldata av høy kvalitet.
-
-## Installering
-
-Du trenger python3.11 og pip.
-
-Lag et virtuelt pythonmiljø med f.eks venv eller pdm.
-
-venv:
+## Install/setup
+You can easily install this project with tools like pdm or uv. 
 ```bash
-python3 -m venv <navn-på-miljø>     # lag miljø
-. <navn-på-miljø>/bin/activate      # aktiver miljø
-pip install .                       # installer pakker og moduler
-```
-
-pdm:
-```bash
+uv sync
+# OR
 pdm install
 ```
-
-
-## Bruk
-
-
-### Kjør alignment pipelinen
-venv:
-```bash
-python3 -m align_documents align_all
+Alternatively, manually create a virtual environment and install with pip: 
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install . 
 ```
 
-pdm:
-```bash
-pdm run python -m align_documents align_all
-```
+## Run alignment pipeline 
 
-#### Shorthand
-`align_documents` uten å spesifiesere sub-kommando blir automatisk tolket som `align_documents align_all`:
+These are equivalent (prefix with `uv run` or `pdm run`)
 ```bash
-# Disse to linjene har samme effekt
+align_all
 python -m align_documents
-python -m align_documents align_all
+python -m align_documents.align_all
 ```
-NB: Hvis du vil se dokumentasjon av `align_all` sub-kommandoen ved bruk av `--help`-argumentet, må du fullstendig spesifisere `align_documents align_all --help`. Se [Mer informasjon](#mer-informasjon).
 
+The alignment pipeline expects a config file. See our sample config at [alignment_config.toml](alignment_config.toml)  
+**TODO**: explain config file parameters
 
-### Mer informasjon
+## Run info script
+This script will read the alignment config file and calculate info about the source data for alignment
 
-Synopsis:
-
+These are equivalent (prefix with `uv run` or `pdm run`)
 ```bash
-python -m align_documents [args] <subcommand> [subcommand-args]
+info
+python -m align_documents.info
 ```
 
-For mer informasjon om bruk og tilgjengelige sub-kommandoer:
-```bash
-python -m align_documents --help
-```
-Eller for en konkret sub-kommando, f.eks. for `align_all`:
-```bash
-python -m align_documents align_all --help
-```
-#### Tilgjengelige sub-kommandoer
--  `align_all`: Kjør alignment-pipelinen
--  `info`: Analyser input-datasettet
 
-## Scripts
+## Other scripts
 The script `scripts/find_negative_documents.py` finds pairs of documents that are pretty similar, but expected to not be actually parallell (i.e above min_threshold, but less than the match threshold in `alignment_config.yaml`). We use this to find assumed negative document pairs for our manually anntoated documents.
 
 
