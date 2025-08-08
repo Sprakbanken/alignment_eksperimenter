@@ -1,5 +1,4 @@
 from pathlib import Path
-import pandas as pd
 import logging
 from tqdm import tqdm
 from align_documents.utils.get_embedding_model import get_embedding_model
@@ -7,12 +6,11 @@ from align_documents.utils.config import get_config
 from align_documents.utils.logging import setup_logging
 from align_documents.utils.dataframe import (
     get_file_info,
-    filter_df,
+    get_websites_with_both_langs,
     jsonl_files_to_df,
 )
 from align_documents.align import align
 import argparse
-
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +46,20 @@ def main():
     logger.info(config)
 
     df = get_file_info(config["data_dir"])
-    df = filter_df(df, languages=config["languages"])
+    df = get_websites_with_both_langs(df, languages=config["languages"])
 
     embedding_model = get_embedding_model(config["embedding_model"])
 
     embedding_directory: Path = config["embedding_dir"] / config["embedding_model"]
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
-    dfs = []
+    # Save alignment config to output directory
+    config["output_dir"].mkdir(exist_ok=True, parents=True)
+    config_outfile = config["output_dir"] / "alignment_config.toml"
+    config_outfile.write_text(args.config_file.read_text())
+
+    lang_1, lang_2 = config["languages"]
+
     for website, df_ in tqdm(
         df.groupby("website"),
         total=len(df.website.unique()),
@@ -82,19 +86,10 @@ def main():
             min_doc_len=config["min_document_length"],
             number_to_letter_ratio=config["number_to_letter_ratio"],
         )
-        dfs.append(aligned_documents)
+        outfile = config["output_dir"] / f"{website}_{lang_1}_{lang_2}.jsonl"
+        if not aligned_documents.empty:
+            aligned_documents.to_json(
+                outfile, lines=True, orient="records", index=False
+            )
 
-    aligned_docs = pd.concat(dfs)
-    aligned_docs.index = range(len(aligned_docs))
-
-    logger.info("Number of aligned documents: %s", len(aligned_docs))
-
-    config["output_dir"].mkdir(exist_ok=True, parents=True)
-    outfile = config["output_dir"] / "aligned_docs.jsonl"
-    i = 0
-    while outfile.exists():
-        i += 1
-        outfile = config["output_dir"] / f"aligned_docs_{i}.jsonl"
-
-    aligned_docs.to_json(outfile, lines=True, orient="records")
-    logger.info("Aligned documents saved to %s", outfile)
+    logger.info("All aligned documents saved to %s", config["output_dir"])
