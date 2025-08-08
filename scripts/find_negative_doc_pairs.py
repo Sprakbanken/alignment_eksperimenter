@@ -5,15 +5,15 @@ from align_documents.utils.dataframe import (
     jsonl_files_to_df,
     get_websites_with_both_langs,
     get_file_info,
+    get_lang1_lang2_dataframes,
 )
-from align_documents.align import get_document_embeddings, has_bad_quality
+from align_documents.align import get_document_embeddings
 from align_documents.types import AggregationStrategy
 
 from pathlib import Path
 import logging
 from argparse import ArgumentParser
 import pandas as pd
-from functools import partial
 from sentence_transformers import util
 
 from tqdm import tqdm
@@ -33,44 +33,12 @@ def find_negative_doc_pairs(
     min_doc_len: int | None,
     number_to_letter_ratio: float,
     pairs_per_website: int,
-):
-    lang1, lang2 = languages
-
-    quality_function = partial(
-        has_bad_quality,
-        min_len=min_doc_len,
-        number_to_letter_ratio=number_to_letter_ratio,
+) -> pd.DataFrame:
+    lang1, lang1_df, lang2, lang2_df = get_lang1_lang2_dataframes(
+        df, languages, min_doc_len, number_to_letter_ratio
     )
-
-    lang1_df = df[df.lang == lang1]
-    logger.debug("Number of documents in %s before filtering: %s", lang1, len(lang1_df))
-    lang1_df = lang1_df.drop_duplicates(subset="fulltext_joined")
-    logger.debug(
-        "Number of documents in %s after dropping duplicates: %s", lang1, len(lang1_df)
-    )
-    lang1_df = lang1_df[~lang1_df.fulltext_joined.apply(quality_function)]
-    logger.debug(
-        "Number of documents in %s after filtering on quality: %s", lang1, len(lang1_df)
-    )
-
-    lang1_df.index = range(len(lang1_df))
-
-    lang2_df = df[df.lang == lang2]
-    logger.debug("Number of documents in %s before filtering: %s", lang2, len(lang2_df))
-    lang2_df = lang2_df.drop_duplicates(subset="fulltext_joined")
-    logger.debug(
-        "Number of documents in %s after dropping duplicates: %s", lang2, len(lang2_df)
-    )
-    lang2_df = lang2_df[~lang2_df.fulltext_joined.apply(quality_function)]
-    logger.debug(
-        "Number of documents in %s after filtering on quality: %s", lang2, len(lang2_df)
-    )
-    lang2_df.index = range(len(lang2_df))
-
-    if len(lang1_df) > len(lang2_df):
-        # Set lang1 to be language with fewest documents (for semantic search below)
-        lang1, lang2 = lang2, lang1
-        lang1_df, lang2_df = lang2_df, lang1_df
+    if lang1_df.empty or lang2_df.empty:
+        return pd.DataFrame()
 
     lang1_embeddings = get_document_embeddings(
         embedding_model=embedding_model,
@@ -165,8 +133,19 @@ if __name__ == "__main__":
     embedding_directory: Path = config["embedding_dir"] / config["embedding_model"]
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
-    dfs = []
+    # Set output_dir to have same name as aligned document, but with negative_pairs suffix instead
+    if config["output_dir"].name.endswith("aligned"):
+        config["output_dir"] = (
+            config["output_dir"].parent
+            / config["output_dir"].name.remove_suffix("aligned")
+            + "negative_pairs"
+        )
+    config["output_dir"].mkdir(parents=True, exist_ok=True)
+
+    lang_1, lang_2 = config["languages"]
+
     tot_len = 0
+
     for website, df_ in tqdm(
         df.groupby("website"),
         total=len(df.website.unique()),
@@ -194,18 +173,22 @@ if __name__ == "__main__":
             number_to_letter_ratio=config["number_to_letter_ratio"],
             pairs_per_website=args.pairs_per_website,
         )
+        logger.debug(
+            "Number of negative pairs for website %s: %s",
+            website,
+            len(negative_pairs_df),
+        )
+
+        outfile = config["output_dir"] / f"{website}_{lang_1}_{lang_2}.jsonl"
+
+        if not negative_pairs_df.empty:
+            negative_pairs_df.to_json(
+                outfile, lines=True, orient="records", index=False
+            )
+            logger.debug("Saved negative pairs saved to %s", outfile)
+
         tot_len += len(negative_pairs_df)
-        dfs.append(negative_pairs_df)
         if tot_len > args.total_pairs:
             break
-    negative_pairs_df = pd.concat(dfs, ignore_index=True)
-    logger.info("Number of negative pairs: %s", len(negative_pairs_df))
-    config["output_dir"].mkdir(exist_ok=True, parents=True)
-    outfile = config["output_dir"] / "negative_pairs.jsonl"
-    i = 0
-    while outfile.exists():
-        i += 1
-        outfile = config["output_dir"] / f"negative_pairs_{i}.jsonl"
 
-    negative_pairs_df.to_json(outfile, lines=True, orient="records", index=False)
-    logger.info("Negative pairs saved to %s", outfile)
+    logger.info("Number of negative pairs: %s", tot_len)

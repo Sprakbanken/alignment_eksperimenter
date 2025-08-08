@@ -1,25 +1,17 @@
 import logging
-import os
 from pathlib import Path
 import tomllib
 
-from align_documents.types import AggregationStrategy
+from align_documents.types import AggregationStrategy, Config
 
 logger = logging.getLogger(__name__)
 
 
-def validate_config(config: dict) -> dict:
+def validate_config(config: dict) -> Config:
     if config["data_dir"]:
         config["data_dir"] = Path(config["data_dir"])
         if not config["data_dir"].exists():
             raise ValueError("Data directory does not exist.")
-    else:
-        data_dir = os.environ.get("MALFRID", None)
-        if data_dir is None:
-            raise ValueError(
-                "No data directory provided (no data_dir in config file and no MALFRID environment variable)."
-            )
-        config["data_dir"] = Path(data_dir)
 
     config_keys = [
         "output_dir",
@@ -55,10 +47,10 @@ def validate_config(config: dict) -> dict:
 
     return config
 
+
 def get_config(config_file: Path) -> dict:
     with open(config_file, "rb") as f:
         config = tomllib.load(f)
 
     logger.info(config)
     return validate_config(config)
-
