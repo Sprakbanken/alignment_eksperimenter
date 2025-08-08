@@ -1,9 +1,9 @@
 from align_documents.utils.logging import setup_logging
 from align_documents.utils.get_embedding_model import get_embedding_model
-from align_documents.utils.config import validate_config
+from align_documents.utils.config import get_config
 from align_documents.utils.dataframe import (
     jsonl_files_to_df,
-    filter_df,
+    get_websites_with_both_langs,
     get_file_info,
 )
 from align_documents.align import get_document_embeddings, has_bad_quality
@@ -12,7 +12,6 @@ from align_documents.types import AggregationStrategy
 from pathlib import Path
 import logging
 from argparse import ArgumentParser
-import tomllib
 import pandas as pd
 from functools import partial
 from sentence_transformers import util
@@ -20,14 +19,6 @@ from sentence_transformers import util
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
-
-
-# in addition to alignment_config.toml
-negative_pairs_config = {
-    "min_threshold": 0.5,
-    "pairs_per_website": 2,
-    "total_pairs": 100,
-}
 
 
 def find_negative_doc_pairs(
@@ -137,18 +128,37 @@ if __name__ == "__main__":
         default=Path("alignment_config.toml"),
     )
     parser.add_argument("-l", "--log_level", help="Log level", default="INFO")
+    parser.add_argument(
+        "--min_threshold",
+        help="Minimum similarity threshold for negative pairs",
+        type=float,
+        default=0.5,
+    )
+    parser.add_argument(
+        "--pairs_per_website",
+        help="Number of negative pairs to generate per website",
+        type=int,
+        default=2,
+    )
+    parser.add_argument(
+        "--total_pairs",
+        help="Total number of negative pairs to generate",
+        type=int,
+        default=100,
+    )
     args = parser.parse_args()
     setup_logging("find_negative_doc_pairs", args.log_level)
 
-    with open(args.config_file, "rb") as f:
-        config = tomllib.load(f)
-
-    logger.info(config)
-    validate_config(config)
-    logger.info("Negative pairs config: %s", negative_pairs_config)
+    config = get_config(args.config_file)
+    logger.info(
+        "Negative pairs config: min_threshold=%s, pairs_per_website=%s, total_pairs=%s",
+        args.min_threshold,
+        args.pairs_per_website,
+        args.total_pairs,
+    )
 
     df = get_file_info(config["data_dir"])
-    df = filter_df(df, languages=config["languages"])
+    df = get_websites_with_both_langs(df, languages=config["languages"])
 
     embedding_model = get_embedding_model(config["embedding_model"])
 
@@ -173,7 +183,7 @@ if __name__ == "__main__":
 
         negative_pairs_df = find_negative_doc_pairs(
             df=all_website_docs,
-            min_threshold=negative_pairs_config["min_threshold"],
+            min_threshold=args.min_threshold,
             max_threshold=config["match_threshold"],
             website_name=website,
             embedding_dir=embedding_directory,
@@ -182,11 +192,11 @@ if __name__ == "__main__":
             languages=config["languages"],
             min_doc_len=config["min_document_length"],
             number_to_letter_ratio=config["number_to_letter_ratio"],
-            pairs_per_website=negative_pairs_config["pairs_per_website"],
+            pairs_per_website=args.pairs_per_website,
         )
         tot_len += len(negative_pairs_df)
         dfs.append(negative_pairs_df)
-        if tot_len > negative_pairs_config["total_pairs"]:
+        if tot_len > args.total_pairs:
             break
     negative_pairs_df = pd.concat(dfs, ignore_index=True)
     logger.info("Number of negative pairs: %s", len(negative_pairs_df))
