@@ -125,24 +125,23 @@ if __name__ == "__main__":
         args.total_pairs,
     )
 
-    df = get_file_info(config["data_dir"])
-    df = get_websites_with_both_langs(df, languages=config["languages"])
+    df = get_file_info(config.data_dir)
+    df = get_websites_with_both_langs(df, languages=config.languages)
 
-    embedding_model = get_embedding_model(config["embedding_model"])
+    embedding_model = get_embedding_model(config.embedding_model)
 
-    embedding_directory: Path = config["embedding_dir"] / config["embedding_model"]
+    embedding_directory: Path = config.embedding_dir / config.embedding_model
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
     # Set output_dir to have same name as aligned document, but with negative_pairs suffix instead
-    if config["output_dir"].name.endswith("aligned"):
-        config["output_dir"] = (
-            config["output_dir"].parent
-            / config["output_dir"].name.remove_suffix("aligned")
+    if config.output_dir.name.endswith("aligned"):
+        config.output_dir = (
+            config.output_dir.parent / config.output_dir.name.remove_suffix("aligned")
             + "negative_pairs"
         )
-    config["output_dir"].mkdir(parents=True, exist_ok=True)
+    config.output_dir.mkdir(parents=True, exist_ok=True)
 
-    lang_1, lang_2 = config["languages"]
+    lang_1, lang_2 = config.languages
 
     tot_len = 0
 
@@ -156,21 +155,21 @@ if __name__ == "__main__":
         logger.debug("Formats: %s", df_.format.unique())
 
         all_website_docs = jsonl_files_to_df(
-            source_dir=config["data_dir"], filenames=df_.file_name
+            source_dir=config.data_dir, filenames=df_.file_name
         )
         logger.debug("Number of documents: %s", len(all_website_docs))
 
         negative_pairs_df = find_negative_doc_pairs(
             df=all_website_docs,
             min_threshold=args.min_threshold,
-            max_threshold=config["match_threshold"],
+            max_threshold=config.match_threshold,
             website_name=website,
             embedding_dir=embedding_directory,
-            aggregation_strategy=config["aggregation_strategy"],
-            batch_size=config["batch_size"],
-            languages=config["languages"],
-            min_doc_len=config["min_document_length"],
-            number_to_letter_ratio=config["number_to_letter_ratio"],
+            aggregation_strategy=config.aggregation_strategy,
+            batch_size=config.batch_size,
+            languages=config.languages,
+            min_doc_len=config.min_document_length,
+            number_to_letter_ratio=config.number_to_letter_ratio,
             pairs_per_website=args.pairs_per_website,
         )
         logger.debug(
@@ -179,7 +178,7 @@ if __name__ == "__main__":
             len(negative_pairs_df),
         )
 
-        outfile = config["output_dir"] / f"{website}_{lang_1}_{lang_2}.jsonl"
+        outfile = config.output_dir / f"{website}_{lang_1}_{lang_2}.jsonl"
 
         if not negative_pairs_df.empty:
             negative_pairs_df.to_json(

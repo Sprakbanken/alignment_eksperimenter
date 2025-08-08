@@ -45,20 +45,20 @@ def main():
     config = get_config(args.config_file)
     logger.info(config)
 
-    df = get_file_info(config["data_dir"])
-    df = get_websites_with_both_langs(df, languages=config["languages"])
+    df = get_file_info(config.data_dir)
+    df = get_websites_with_both_langs(df, languages=config.languages)
 
-    embedding_model = get_embedding_model(config["embedding_model"])
+    embedding_model = get_embedding_model(config.embedding_model)
 
-    embedding_directory: Path = config["embedding_dir"] / config["embedding_model"]
+    embedding_directory: Path = config.embedding_dir / config.embedding_model
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
     # Save alignment config to output directory
-    config["output_dir"].mkdir(exist_ok=True, parents=True)
-    config_outfile = config["output_dir"] / "alignment_config.toml"
+    config.output_dir.mkdir(exist_ok=True, parents=True)
+    config_outfile = config.output_dir / "alignment_config.toml"
     config_outfile.write_text(args.config_file.read_text())
 
-    lang_1, lang_2 = config["languages"]
+    lang_1, lang_2 = config.languages
 
     for website, df_ in tqdm(
         df.groupby("website"),
@@ -70,7 +70,7 @@ def main():
         logger.debug("Formats: %s", df_.format.unique())
 
         all_website_docs = jsonl_files_to_df(
-            source_dir=config["data_dir"], filenames=df_.file_name
+            source_dir=config.data_dir, filenames=df_.file_name
         )
         logger.debug("Number of documents: %s", len(all_website_docs))
 
@@ -79,17 +79,17 @@ def main():
             website_name=website,
             embedding_dir=embedding_directory,
             embedding_model=embedding_model,
-            match_threshold=config["match_threshold"],
-            aggregation_strategy=config["aggregation_strategy"],
-            batch_size=config["batch_size"],
-            languages=config["languages"],
-            min_doc_len=config["min_document_length"],
-            number_to_letter_ratio=config["number_to_letter_ratio"],
+            match_threshold=config.match_threshold,
+            aggregation_strategy=config.aggregation_strategy,
+            batch_size=config.batch_size,
+            languages=config.languages,
+            min_doc_len=config.min_document_length,
+            number_to_letter_ratio=config.number_to_letter_ratio,
         )
-        outfile = config["output_dir"] / f"{website}_{lang_1}_{lang_2}.jsonl"
+        outfile = config.output_dir / f"{website}_{lang_1}_{lang_2}.jsonl"
         if not aligned_documents.empty:
             aligned_documents.to_json(
                 outfile, lines=True, orient="records", index=False
             )
 
-    logger.info("All aligned documents saved to %s", config["output_dir"])
+    logger.info("All aligned documents saved to %s", config.output_dir)
