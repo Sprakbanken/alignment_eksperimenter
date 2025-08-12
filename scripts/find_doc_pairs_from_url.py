@@ -1,16 +1,12 @@
 import argparse
 import logging
-import os
 import re
-import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
 from rapidfuzz import fuzz
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from align_documents.utils.config import get_config
 from align_documents.utils.logging import setup_logging
