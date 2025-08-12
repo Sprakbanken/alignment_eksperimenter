@@ -18,7 +18,6 @@ from align_documents.utils.logging import setup_logging
 logger = logging.getLogger(__name__)
 
 
-# Move all function definitions here, outside of if __name__ == "__main__"
 def extract_language_code(url, lang_code_regex):
     match = lang_code_regex.search(url)
     return match.group(1) if match else None
