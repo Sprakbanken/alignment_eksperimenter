@@ -4,12 +4,13 @@ build/*
 
 .pdm-python
 .venv
+._venv
 
 output
+data
 !data/output
-embeddings
 
-alignment_config.toml
+
 logs
 
 .pdm-python
