@@ -126,6 +126,7 @@ def align(
             lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)
         )
         logger.debug("Number of aligned documents: %s", len(df))
+        logger.debug(df.columns)
         return df
 
     return pd.DataFrame()

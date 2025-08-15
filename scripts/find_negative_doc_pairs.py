@@ -82,6 +82,7 @@ def find_negative_doc_pairs(
             lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)
         )
         logger.debug("Number of negative pairs: %s", len(df))
+        logger.debug("Dataframe columns: %s", df.columns)
         return df
     return pd.DataFrame()
 
@@ -135,10 +136,8 @@ if __name__ == "__main__":
 
     # Set output_dir to have same name as aligned document, but with negative_pairs suffix instead
     if config.output_dir.name.endswith("aligned"):
-        config.output_dir = (
-            config.output_dir.parent / config.output_dir.name.remove_suffix("aligned")
-            + "negative_pairs"
-        )
+        new_dir_name = config.output_dir.name.removesuffix("aligned") + "negative_pairs"
+        config.output_dir = config.output_dir.parent / new_dir_name
     config.output_dir.mkdir(parents=True, exist_ok=True)
 
     lang_1, lang_2 = config.languages

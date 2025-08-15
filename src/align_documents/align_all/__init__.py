@@ -47,6 +47,11 @@ def main():
 
     df = get_file_info(config.data_dir)
     df = get_websites_with_both_langs(df, languages=config.languages)
+    logger.info(
+        "Number of websites with documents in both languages: %s", df.website.nunique()
+    )
+    logger.debug("Number of documents in both languages: %s", len(df))
+    logger.debug(df.head(5))
 
     embedding_model = get_embedding_model(config.embedding_model)
 
