@@ -9,7 +9,7 @@ from align_documents.utils.dataframe import (
     get_websites_with_both_langs,
     jsonl_files_to_df,
 )
-from align_documents.align import align
+from align_documents.align import filter_and_align
 import argparse
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ def main():
         )
         logger.debug("Number of documents: %s", len(all_website_docs))
 
-        aligned_documents = align(
+        aligned_documents = filter_and_align(
             all_website_docs,
             website_name=website,
             embedding_dir=embedding_directory,
