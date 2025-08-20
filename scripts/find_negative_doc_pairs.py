@@ -1,33 +1,24 @@
 from align_documents.utils.logging import setup_logging
 from align_documents.utils.get_embedding_model import get_embedding_model
-from align_documents.utils.config import validate_config
+from align_documents.utils.config import get_config
 from align_documents.utils.dataframe import (
     jsonl_files_to_df,
-    filter_df,
+    get_websites_with_both_langs,
     get_file_info,
+    get_lang1_lang2_dataframes,
 )
-from align_documents.align import get_document_embeddings, has_bad_quality
+from align_documents.align import get_document_embeddings
 from align_documents.types import AggregationStrategy
 
 from pathlib import Path
 import logging
 from argparse import ArgumentParser
-import tomllib
 import pandas as pd
-from functools import partial
 from sentence_transformers import util
 
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
-
-
-# in addition to alignment_config.toml
-negative_pairs_config = {
-    "min_threshold": 0.5,
-    "pairs_per_website": 2,
-    "total_pairs": 100,
-}
 
 
 def find_negative_doc_pairs(
@@ -42,44 +33,12 @@ def find_negative_doc_pairs(
     min_doc_len: int | None,
     number_to_letter_ratio: float,
     pairs_per_website: int,
-):
-    lang1, lang2 = languages
-
-    quality_function = partial(
-        has_bad_quality,
-        min_len=min_doc_len,
-        number_to_letter_ratio=number_to_letter_ratio,
+) -> pd.DataFrame:
+    lang1, lang1_df, lang2, lang2_df = get_lang1_lang2_dataframes(
+        df, languages, min_doc_len, number_to_letter_ratio
     )
-
-    lang1_df = df[df.lang == lang1]
-    logger.debug("Number of documents in %s before filtering: %s", lang1, len(lang1_df))
-    lang1_df = lang1_df.drop_duplicates(subset="fulltext_joined")
-    logger.debug(
-        "Number of documents in %s after dropping duplicates: %s", lang1, len(lang1_df)
-    )
-    lang1_df = lang1_df[~lang1_df.fulltext_joined.apply(quality_function)]
-    logger.debug(
-        "Number of documents in %s after filtering on quality: %s", lang1, len(lang1_df)
-    )
-
-    lang1_df.index = range(len(lang1_df))
-
-    lang2_df = df[df.lang == lang2]
-    logger.debug("Number of documents in %s before filtering: %s", lang2, len(lang2_df))
-    lang2_df = lang2_df.drop_duplicates(subset="fulltext_joined")
-    logger.debug(
-        "Number of documents in %s after dropping duplicates: %s", lang2, len(lang2_df)
-    )
-    lang2_df = lang2_df[~lang2_df.fulltext_joined.apply(quality_function)]
-    logger.debug(
-        "Number of documents in %s after filtering on quality: %s", lang2, len(lang2_df)
-    )
-    lang2_df.index = range(len(lang2_df))
-
-    if len(lang1_df) > len(lang2_df):
-        # Set lang1 to be language with fewest documents (for semantic search below)
-        lang1, lang2 = lang2, lang1
-        lang1_df, lang2_df = lang2_df, lang1_df
+    if lang1_df.empty or lang2_df.empty:
+        return pd.DataFrame()
 
     lang1_embeddings = get_document_embeddings(
         embedding_model=embedding_model,
@@ -123,6 +82,7 @@ def find_negative_doc_pairs(
             lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)
         )
         logger.debug("Number of negative pairs: %s", len(df))
+        logger.debug("Dataframe columns: %s", df.columns)
         return df
     return pd.DataFrame()
 
@@ -137,26 +97,53 @@ if __name__ == "__main__":
         default=Path("alignment_config.toml"),
     )
     parser.add_argument("-l", "--log_level", help="Log level", default="INFO")
+    parser.add_argument(
+        "--min_threshold",
+        help="Minimum similarity threshold for negative pairs",
+        type=float,
+        default=0.5,
+    )
+    parser.add_argument(
+        "--pairs_per_website",
+        help="Number of negative pairs to generate per website",
+        type=int,
+        default=2,
+    )
+    parser.add_argument(
+        "--total_pairs",
+        help="Total number of negative pairs to generate",
+        type=int,
+        default=100,
+    )
     args = parser.parse_args()
     setup_logging("find_negative_doc_pairs", args.log_level)
 
-    with open(args.config_file, "rb") as f:
-        config = tomllib.load(f)
+    config = get_config(args.config_file)
+    logger.info(
+        "Negative pairs config: min_threshold=%s, pairs_per_website=%s, total_pairs=%s",
+        args.min_threshold,
+        args.pairs_per_website,
+        args.total_pairs,
+    )
 
-    logger.info(config)
-    validate_config(config)
-    logger.info("Negative pairs config: %s", negative_pairs_config)
+    df = get_file_info(config.data_dir)
+    df = get_websites_with_both_langs(df, languages=config.languages)
 
-    df = get_file_info(config["data_dir"])
-    df = filter_df(df, languages=config["languages"])
+    embedding_model = get_embedding_model(config.embedding_model)
 
-    embedding_model = get_embedding_model(config["embedding_model"])
-
-    embedding_directory: Path = config["embedding_dir"] / config["embedding_model"]
+    embedding_directory: Path = config.embedding_dir / config.embedding_model
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
-    dfs = []
+    # Set output_dir to have same name as aligned document, but with negative_pairs suffix instead
+    if config.output_dir.name.endswith("aligned"):
+        new_dir_name = config.output_dir.name.removesuffix("aligned") + "negative_pairs"
+        config.output_dir = config.output_dir.parent / new_dir_name
+    config.output_dir.mkdir(parents=True, exist_ok=True)
+
+    lang_1, lang_2 = config.languages
+
     tot_len = 0
+
     for website, df_ in tqdm(
         df.groupby("website"),
         total=len(df.website.unique()),
@@ -167,35 +154,39 @@ if __name__ == "__main__":
         logger.debug("Formats: %s", df_.format.unique())
 
         all_website_docs = jsonl_files_to_df(
-            source_dir=config["data_dir"], filenames=df_.file_name
+            source_dir=config.data_dir, filenames=df_.file_name
         )
         logger.debug("Number of documents: %s", len(all_website_docs))
 
         negative_pairs_df = find_negative_doc_pairs(
             df=all_website_docs,
-            min_threshold=negative_pairs_config["min_threshold"],
-            max_threshold=config["match_threshold"],
+            min_threshold=args.min_threshold,
+            max_threshold=config.match_threshold,
             website_name=website,
             embedding_dir=embedding_directory,
-            aggregation_strategy=config["aggregation_strategy"],
-            batch_size=config["batch_size"],
-            languages=config["languages"],
-            min_doc_len=config["min_document_length"],
-            number_to_letter_ratio=config["number_to_letter_ratio"],
-            pairs_per_website=negative_pairs_config["pairs_per_website"],
+            aggregation_strategy=config.aggregation_strategy,
+            batch_size=config.batch_size,
+            languages=config.languages,
+            min_doc_len=config.min_document_length,
+            number_to_letter_ratio=config.number_to_letter_ratio,
+            pairs_per_website=args.pairs_per_website,
         )
-        tot_len += len(negative_pairs_df)
-        dfs.append(negative_pairs_df)
-        if tot_len > negative_pairs_config["total_pairs"]:
-            break
-    negative_pairs_df = pd.concat(dfs, ignore_index=True)
-    logger.info("Number of negative pairs: %s", len(negative_pairs_df))
-    config["output_dir"].mkdir(exist_ok=True, parents=True)
-    outfile = config["output_dir"] / "negative_pairs.jsonl"
-    i = 0
-    while outfile.exists():
-        i += 1
-        outfile = config["output_dir"] / f"negative_pairs_{i}.jsonl"
+        logger.debug(
+            "Number of negative pairs for website %s: %s",
+            website,
+            len(negative_pairs_df),
+        )
 
-    negative_pairs_df.to_json(outfile, lines=True, orient="records", index=False)
-    logger.info("Negative pairs saved to %s", outfile)
+        outfile = config.output_dir / f"{website}_{lang_1}_{lang_2}.jsonl"
+
+        if not negative_pairs_df.empty:
+            negative_pairs_df.to_json(
+                outfile, lines=True, orient="records", index=False
+            )
+            logger.debug("Saved negative pairs saved to %s", outfile)
+
+        tot_len += len(negative_pairs_df)
+        if tot_len > args.total_pairs:
+            break
+
+    logger.info("Number of negative pairs: %s", tot_len)
