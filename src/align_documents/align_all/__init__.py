@@ -8,6 +8,7 @@ from align_documents.utils.dataframe import (
     jsonl_files_to_df,
 )
 from align_documents.align import filter_and_align
+from align_documents.metadata import AlignmentRun
 import argparse
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ def main():
     config = get_config(args.config_file)
     logger.info(config)
 
+    # Get data from filenames first to save memory, then batch-process later
     df = get_file_info(config.data_dir)
     df = get_websites_with_both_langs(df, languages=config.languages)
     logger.info(
@@ -51,6 +53,7 @@ def main():
     logger.debug("Number of documents in both languages: %s", len(df))
     logger.debug(df.head(5))
 
+    # TODO: Specify revision?
     embedding_model = get_embedding_model(config.embedding_model)
 
     embedding_directory: Path = config.embedding_dir / config.embedding_model
@@ -59,11 +62,14 @@ def main():
     output_dir = config.output_dir / "aligned"
     output_dir.mkdir(parents=True)
 
-    # Save alignment config to output directory
-    config_outfile = config.output_dir / "alignment_config.toml"
-    config_outfile.write_text(args.config_file.read_text())
-
     lang_1, lang_2 = config.languages
+
+    run_metadata = AlignmentRun(
+        __name__,
+        args,
+        embedding_model,
+        args.config_file,
+    )
 
     for website, df_ in tqdm(
         df.groupby("website"),
@@ -78,6 +84,8 @@ def main():
             source_dir=config.data_dir, filenames=df_.file_name
         )
         logger.debug("Number of documents: %s", len(all_website_docs))
+
+        run_metadata.extend_pipeline_input_docs(all_website_docs)
 
         aligned_documents = filter_and_align(
             all_website_docs,
@@ -98,3 +106,7 @@ def main():
             )
 
     logger.info("All aligned documents saved to %s", output_dir)
+
+    metadata_dir = output_dir / "metadata"
+    run_metadata.write(metadata_dir)
+    logger.info("Metadata saved to %s.", metadata_dir)
