@@ -35,14 +35,17 @@ class Config:
         self.aggregation_strategy = AggregationStrategy(self.aggregation_strategy)
         self.languages = tuple(self.languages)
 
+    @classmethod
+    def from_dict(cls, config_dict: dict) -> "Config":
+        config = Config(**config_dict)
+        config.validate_and_cast()
+        return config
+
 
 def get_config(config_file: Path) -> Config:
     with open(config_file, "rb") as f:
         config = tomllib.load(f)
-
-    config = Config(**config)
-    config.validate_and_cast()
-    return config
+    return Config.from_dict(config)
 
 
 if __name__ == "__main__":
