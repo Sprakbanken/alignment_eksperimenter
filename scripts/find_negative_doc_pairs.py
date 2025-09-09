@@ -34,6 +34,7 @@ def find_negative_doc_pairs(
     number_to_letter_ratio: float,
     pairs_per_website: int,
 ) -> pd.DataFrame:
+    """Use semantic search to find document pairs that are similar above min_threshold, but below max_threshold"""
     lang1, lang1_df, lang2, lang2_df = get_lang1_lang2_dataframes(
         df, languages, min_doc_len, number_to_letter_ratio
     )
@@ -65,18 +66,15 @@ def find_negative_doc_pairs(
             continue
         if e[0]["score"] > max_threshold:
             continue
-        negative_pairs.append((i, e[0]))
+        negative_pairs.append((i, e[0]["corpus_id"]))
         if len(negative_pairs) >= pairs_per_website:
             break
+
     if negative_pairs:
-        lang1_indices = [i for i, _ in negative_pairs]
-        lang2_indices = [e["corpus_id"] for _, e in negative_pairs]
+        lang1_indices, lang2_indices = zip(*negative_pairs)
 
-        lang1_df = lang1_df.loc[lang1_indices]
-        lang1_df.index = range(len(lang1_df))
-
-        lang2_df = lang2_df.loc[lang2_indices]
-        lang2_df.index = range(len(lang2_df))
+        lang1_df = lang1_df.loc[list(lang1_indices)].reset_index(drop=True)
+        lang2_df = lang2_df.loc[list(lang2_indices)].reset_index(drop=True)
 
         df = lang1_df.merge(
             lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)
@@ -139,11 +137,8 @@ if __name__ == "__main__":
     embedding_directory: Path = config.embedding_dir / config.embedding_model
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
-    # Set output_dir to have same name as aligned document, but with negative_pairs suffix instead
-    if config.output_dir.name.endswith("aligned"):
-        new_dir_name = config.output_dir.name.removesuffix("aligned") + "negative_pairs"
-        config.output_dir = config.output_dir.parent / new_dir_name
-    config.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = config.output_dir / "negative_pairs"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     lang_1, lang_2 = config.languages
 
@@ -182,7 +177,7 @@ if __name__ == "__main__":
             len(negative_pairs_df),
         )
 
-        outfile = config.output_dir / f"{website}_{lang_1}_{lang_2}.jsonl"
+        outfile = output_dir / f"{website}_{lang_1}_{lang_2}.jsonl"
 
         if not negative_pairs_df.empty:
             negative_pairs_df.to_json(

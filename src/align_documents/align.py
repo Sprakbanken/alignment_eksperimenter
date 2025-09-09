@@ -155,8 +155,8 @@ def filter_and_align(
     if matches:
         lang1_indices, lang2_indices = zip(*matches)
 
-        lang1_df = lang1_df.loc[lang1_indices].reset_index(drop=True)
-        lang2_df = lang2_df.loc[lang2_indices].reset_index(drop=True)
+        lang1_df = lang1_df.loc[list(lang1_indices)].reset_index(drop=True)
+        lang2_df = lang2_df.loc[list(lang2_indices)].reset_index(drop=True)
 
         df = lang1_df.merge(
             lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)
