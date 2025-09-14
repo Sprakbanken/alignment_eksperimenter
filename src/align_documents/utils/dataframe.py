@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 def get_file_info(data_dir: Path) -> pd.DataFrame:
-    info = sorted([e.name[:-6].split("_") + [e.name] for e in data_dir.glob("*.jsonl")])
-    df = pd.DataFrame(info, columns=["website", "language", "format", "file_name"])
+    info = sorted([e.name[:-6].split("_") + [e.name, e] for e in data_dir.glob("*.jsonl")])
+    df = pd.DataFrame(info, columns=["website", "language", "format", "file_name", "file_path"])
     logger.info("Found %s files in %s", len(df), data_dir)
     logger.info("Number of unique websites: %s", len(df.website.unique()))
     logger.info("Unique languages:          %s", df.language.unique())
@@ -29,13 +29,12 @@ def get_websites_with_both_langs(
     )
 
 
-def jsonl_files_to_df(source_dir: Path, filenames: pd.Series) -> pd.DataFrame:
+def jsonl_files_to_df(filepaths: Path) -> pd.DataFrame:
     dfs = []
-    for e in filenames:
-        e = source_dir / e
-        logger.debug(e)
+    for path in filepaths:
+        logger.debug("Reading into dataframe: %s", path)
         dfs.append(pd.read_json(e, lines=True))
-    logger.debug("Read all files from filenames")
+    logger.debug("Finished reading jsonl files into dataframes")
     df = pd.concat(dfs).reset_index(drop=True)
     df["fulltext_joined"] = df.fulltext.apply(lambda x: "\n".join(x))
     return df

@@ -75,9 +75,7 @@ def main():
         logger.debug("Number of files: %s", len(df_))
         logger.debug("Formats: %s", df_.format.unique())
 
-        all_website_docs = jsonl_files_to_df(
-            source_dir=config.data_dir, filenames=df_.file_name
-        )
+        all_website_docs = jsonl_files_to_df(df_.file_path)
         logger.debug("Number of documents: %s", len(all_website_docs))
 
         aligned_documents = filter_and_align(
