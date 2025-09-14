@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 from tqdm import tqdm
 from align_documents.utils import setup_logging, get_config, get_embedding_model
+from align_documents.utils.config import CONFIG_PATH
 from align_documents.utils.dataframe import (
     get_file_info,
     get_websites_with_both_langs,
