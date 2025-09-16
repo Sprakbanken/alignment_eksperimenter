@@ -80,10 +80,11 @@ def align(
     match_threshold: float,
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
-):
+) -> list[tuple[int, int]]:
     """Pair lang1_documents with lang2_documents by creating document embeddings
     with the given sentence transformers model and aggregation strategy.
     For each lang1 embedding, keep the most similar lang2 document over match_threshold, if any.
+    Returns a list of tuples of (lang1_document_index, lang2_document_index)
     """
     lang1_embeddings = get_document_embeddings(
         embedding_model=embedding_model,
@@ -105,7 +106,7 @@ def align(
 
     search_result = util.semantic_search(lang1_embeddings, lang2_embeddings, top_k=1)
     matches = [
-        (i, e[0])
+        (i, e[0]["corpus_id"])
         for i, e in enumerate(search_result)
         if e[0]["score"] > match_threshold
     ]
@@ -152,11 +153,10 @@ def filter_and_align(
     )
 
     if matches:
-        lang1_indices = [i for i, _ in matches]
-        lang2_indices = [e["corpus_id"] for _, e in matches]
+        lang1_indices, lang2_indices = zip(*matches)
 
-        lang1_df = lang1_df.loc[lang1_indices].reset_index(drop=True)
-        lang2_df = lang2_df.loc[lang2_indices].reset_index(drop=True)
+        lang1_df = lang1_df.loc[list(lang1_indices)].reset_index(drop=True)
+        lang2_df = lang2_df.loc[list(lang2_indices)].reset_index(drop=True)
 
         df = lang1_df.merge(
             lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)

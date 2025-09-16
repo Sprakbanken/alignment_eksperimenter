@@ -1,5 +1,5 @@
 data_dir = "data/maalfrid_2025"
-output_dir = "data/output/maalfrid_2025_aligned"
+output_dir = "data/output/maalfrid_2025"
 embedding_model = "BAAI/bge-m3"
 embedding_dir = "data/maalfrid_2025_embeddings"
 batch_size = 8
