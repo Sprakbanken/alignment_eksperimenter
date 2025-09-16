@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from align_documents.types import AggregationStrategy
 from align_documents.utils.logging import setup_logging
+from typing import Self
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ class Config:
         self.languages = tuple(self.languages)
 
     @classmethod
-    def from_dict(cls, config_dict: dict) -> "Config":
+    def from_dict(cls, config_dict: dict) -> Self:
         config = Config(**config_dict)
         config.validate_and_cast()
         return config
