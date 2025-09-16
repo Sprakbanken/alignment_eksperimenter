@@ -5,7 +5,7 @@ import argparse
 import gzip
 import shutil
 from pathlib import Path
-from align_documents.utils.logging import setup_logging
+from align_documents.utils import setup_logging
 
 logger = logging.getLogger(__name__)
 

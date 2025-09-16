@@ -4,7 +4,7 @@ import tomllib
 from dataclasses import dataclass
 
 from align_documents.types import AggregationStrategy
-from align_documents.utils.logging import setup_logging
+from align_documents.utils import setup_logging
 from typing import Self
 
 
@@ -27,7 +27,7 @@ class Config:
     def validate_and_cast(self):
         self.data_dir = Path(self.data_dir)
         if not self.data_dir.exists():
-            raise FileNotFoundError("data_dir does not exist.")
+            raise FileNotFoundError(f"data_dir {self.data_dir} does not exist.")
 
         if len(self.languages) != 2:
             raise ValueError("languages must (only) contain two languages")

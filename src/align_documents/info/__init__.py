@@ -13,7 +13,7 @@ from align_documents.utils.dataframe import (
     jsonl_files_to_df,
 )
 from align_documents.utils.config import get_config
-from align_documents.utils.logging import setup_logging
+from align_documents.utils import setup_logging
 
 logger = getLogger(__name__)
 
