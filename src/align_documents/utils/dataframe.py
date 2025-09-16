@@ -41,9 +41,7 @@ def jsonl_files_to_df(source_dir: Path, filenames: pd.Series) -> pd.DataFrame:
     return df
 
 
-def has_bad_quality(
-    doc_text: str, min_len: int | None, number_to_letter_ratio: float
-) -> bool:
+def has_bad_quality(doc_text: str, min_len: int, number_to_letter_ratio: float) -> bool:
     if min_len and len(doc_text) < min_len:
         return True
     num_nums = len(re.findall(r"\d", doc_text))
@@ -71,7 +69,7 @@ def deduplicate_and_filter_on_quality(
 def get_lang1_lang2_dataframes(
     df: pd.DataFrame,
     languages: tuple[str, str],
-    min_doc_len: int | None,
+    min_doc_len: int,
     number_to_letter_ratio: float,
 ) -> tuple[str, pd.DataFrame, str, pd.DataFrame]:
     """Split dataframe into"""
