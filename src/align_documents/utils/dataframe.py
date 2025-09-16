@@ -1,6 +1,10 @@
 from pathlib import Path
 import pandas as pd
 import logging
+from functools import partial
+from collections.abc import Callable
+import regex as re
+
 
 logger = logging.getLogger(__name__)
 
@@ -15,37 +19,14 @@ def get_file_info(data_dir: Path) -> pd.DataFrame:
     return df
 
 
-def filter_df(df: pd.DataFrame, languages: tuple[str, str]) -> pd.DataFrame:
+def get_websites_with_both_langs(
+    df: pd.DataFrame, languages: tuple[str, str]
+) -> pd.DataFrame:
     """Return a DataFrame containing only rows with websites that has files in both the specified languages."""
-    multilingual_websites = df.groupby("website").filter(
-        lambda x: len(x.language.unique()) > 1
+    lang1, lang2 = languages
+    return df.groupby("website").filter(
+        lambda df: lang1 in df.language.unique() and lang2 in df.language.unique()
     )
-    single_language_websites = df.groupby("website").filter(
-        lambda x: len(x.language.unique()) == 1
-    )
-    logger.info(
-        "Number of websites with multiple languages: %s",
-        len(multilingual_websites.website.unique()),
-    )
-    logger.info(
-        "Number of websites with only one language: %s",
-        len(single_language_websites.website.unique()),
-    )
-
-    websites_to_remove = []
-    for website, df_ in multilingual_websites.groupby("website"):
-        if not set(languages) - set(df_.language.unique()) == set():
-            logger.debug(
-                "Website %s does not have files in both languages %s and %s",
-                website,
-                *languages,
-            )
-            websites_to_remove.append(website)
-
-    multilingual_websites = multilingual_websites[
-        ~multilingual_websites.website.isin(websites_to_remove)
-    ]
-    return multilingual_websites
 
 
 def jsonl_files_to_df(source_dir: Path, filenames: pd.Series) -> pd.DataFrame:
@@ -55,7 +36,67 @@ def jsonl_files_to_df(source_dir: Path, filenames: pd.Series) -> pd.DataFrame:
         logger.debug(e)
         dfs.append(pd.read_json(e, lines=True))
     logger.debug("Read all files from filenames")
-    df = pd.concat(dfs)
-    df.index = range(len(df))
+    df = pd.concat(dfs).reset_index(drop=True)
     df["fulltext_joined"] = df.fulltext.apply(lambda x: "\n".join(x))
     return df
+
+
+def has_bad_quality(
+    doc_text: str, min_len: int | None, number_to_letter_ratio: float
+) -> bool:
+    if min_len and len(doc_text) < min_len:
+        return True
+    num_nums = len(re.findall(r"\d", doc_text))
+    num_letters = len(re.findall(r"[A-Za-zÅåÆæØø]", doc_text))
+    if num_letters == 0:
+        return True
+    if num_nums / num_letters > number_to_letter_ratio:
+        return True
+    return False
+
+
+def deduplicate_and_filter_on_quality(
+    df: pd.DataFrame,
+    quality_function: Callable[[str], bool],
+    text_col: str = "fulltext_joined",
+) -> pd.DataFrame:
+    logger.debug("Number of documents before filtering: %s", len(df))
+    df = df.drop_duplicates(subset=text_col)
+    logger.debug("Number of documents after dropping duplicates: %s", len(df))
+    df = df[~df[text_col].apply(quality_function)].reset_index(drop=True)
+    logger.debug("Number of documents after filtering on quality: %s", len(df))
+    return df
+
+
+def get_lang1_lang2_dataframes(
+    df: pd.DataFrame,
+    languages: tuple[str, str],
+    min_doc_len: int | None,
+    number_to_letter_ratio: float,
+) -> tuple[str, pd.DataFrame, str, pd.DataFrame]:
+    """Split dataframe into"""
+
+    quality_function = partial(
+        has_bad_quality,
+        min_len=min_doc_len,
+        number_to_letter_ratio=number_to_letter_ratio,
+    )
+
+    lang1, lang2 = languages
+
+    lang1_df = df[df.lang == lang1]
+    lang2_df = df[df.lang == lang2]
+
+    lang1_df = deduplicate_and_filter_on_quality(
+        lang1_df, quality_function=quality_function
+    )
+    lang2_df = deduplicate_and_filter_on_quality(
+        lang2_df, quality_function=quality_function
+    )
+
+    if len(lang1_df) > len(lang2_df):
+        # Set lang1 to be language with fewest documents (for semantic search below)
+        lang1, lang2 = lang2, lang1
+        lang1_df, lang2_df = lang2_df, lang1_df
+
+    return (lang1, lang1_df, lang2, lang2_df)

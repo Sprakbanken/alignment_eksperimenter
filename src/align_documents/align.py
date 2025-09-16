@@ -4,9 +4,10 @@ import logging
 from sentence_transformers import SentenceTransformer, util
 import torch
 from align_documents.utils.split import chunk_texts
+from align_documents.utils.dataframe import get_lang1_lang2_dataframes
 from align_documents.types import AggregationStrategy
-import regex as re
-from functools import partial
+from collections.abc import Iterable
+
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -69,21 +70,51 @@ def get_document_embeddings(
     return embeddings
 
 
-def has_bad_quality(
-    doc_text: str, min_len: int | None, number_to_letter_ratio: float
-) -> bool:
-    if min_len and len(doc_text) < min_len:
-        return True
-    num_nums = len(re.findall(r"\d", doc_text))
-    num_letters = len(re.findall(r"[A-Za-zÅåÆæØø]", doc_text))
-    if num_letters == 0:
-        return True
-    if num_nums / num_letters > number_to_letter_ratio:
-        return True
-    return False
-
-
 def align(
+    lang1_documents: Iterable[str],
+    lang2_documents: Iterable[str],
+    lang1_filename_identifier: str,
+    lang2_filename_identifier: str,
+    embedding_dir: Path | None,
+    embedding_model: SentenceTransformer,
+    match_threshold: float,
+    aggregation_strategy: AggregationStrategy,
+    batch_size: int,
+) -> list[tuple[int, int]]:
+    """Pair lang1_documents with lang2_documents by creating document embeddings
+    with the given sentence transformers model and aggregation strategy.
+    For each lang1 embedding, keep the most similar lang2 document over match_threshold, if any.
+    Returns a list of tuples of (lang1_document_index, lang2_document_index)
+    """
+    lang1_embeddings = get_document_embeddings(
+        embedding_model=embedding_model,
+        documents=lang1_documents,
+        embedding_directory=embedding_dir,
+        filename_identifier=lang1_filename_identifier,
+        aggregation_strategy=aggregation_strategy,
+        batch_size=batch_size,
+    )
+
+    lang2_embeddings = get_document_embeddings(
+        embedding_model=embedding_model,
+        documents=lang2_documents,
+        embedding_directory=embedding_dir,
+        filename_identifier=lang2_filename_identifier,
+        aggregation_strategy=aggregation_strategy,
+        batch_size=batch_size,
+    )
+
+    search_result = util.semantic_search(lang1_embeddings, lang2_embeddings, top_k=1)
+    matches = [
+        (i, e[0]["corpus_id"])
+        for i, e in enumerate(search_result)
+        if e[0]["score"] > match_threshold
+    ]
+    logger.debug("Number of matches: %s", len(matches))
+    return matches
+
+
+def filter_and_align(
     df: pd.DataFrame,
     website_name: str,
     embedding_dir: Path | None,
@@ -95,86 +126,43 @@ def align(
     min_doc_len: int | None,
     number_to_letter_ratio: float,
 ) -> pd.DataFrame:
-    """Align documents using sentence embeddings."""
+    """Align documents using sentence embeddings.
+    The dataframe 'df' contains documents in both languages, so a dataframe for each language is extracted from this.
+    Then, the documents are embedded with a sentence embedding model.
+    Documents in both languages that are similar above a certain threshold are kept
+    and returned as a dataframe where each row contains a document pair (suffixed with _<language code>)
+    """
 
-    lang1, lang2 = languages
-
-    quality_function = partial(
-        has_bad_quality,
-        min_len=min_doc_len,
-        number_to_letter_ratio=number_to_letter_ratio,
+    lang1, lang1_df, lang2, lang2_df = get_lang1_lang2_dataframes(
+        df, languages, min_doc_len, number_to_letter_ratio
     )
 
-    lang1_df = df[df.lang == lang1]
-    logger.debug("Number of documents in %s before filtering: %s", lang1, len(lang1_df))
-    lang1_df = lang1_df.drop_duplicates(subset="fulltext_joined")
-    logger.debug(
-        "Number of documents in %s after dropping duplicates: %s", lang1, len(lang1_df)
-    )
-    lang1_df = lang1_df[~lang1_df.fulltext_joined.apply(quality_function)]
-    logger.debug(
-        "Number of documents in %s after filtering on quality: %s", lang1, len(lang1_df)
-    )
+    if lang1_df.empty or lang2_df.empty:
+        return pd.DataFrame()
 
-    lang1_df.index = range(len(lang1_df))
-
-    lang2_df = df[df.lang == lang2]
-    logger.debug("Number of documents in %s before filtering: %s", lang2, len(lang2_df))
-    lang2_df = lang2_df.drop_duplicates(subset="fulltext_joined")
-    logger.debug(
-        "Number of documents in %s after dropping duplicates: %s", lang2, len(lang2_df)
-    )
-    lang2_df = lang2_df[~lang2_df.fulltext_joined.apply(quality_function)]
-    logger.debug(
-        "Number of documents in %s after filtering on quality: %s", lang2, len(lang2_df)
-    )
-    lang2_df.index = range(len(lang2_df))
-
-    if len(lang1_df) > len(lang2_df):
-        # Set lang1 to be language with fewest documents (for semantic search below)
-        lang1, lang2 = lang2, lang1
-        lang1_df, lang2_df = lang2_df, lang1_df
-
-    lang1_embeddings = get_document_embeddings(
+    matches = align(
+        lang1_documents=lang1_df.fulltext_joined,
+        lang2_documents=lang2_df.fulltext_joined,
+        lang1_filename_identifier=f"{website_name}_{lang1}",
+        lang2_filename_identifier=f"{website_name}_{lang2}",
+        embedding_dir=embedding_dir,
         embedding_model=embedding_model,
-        documents=lang1_df.fulltext_joined,
-        embedding_directory=embedding_dir,
-        filename_identifier=f"{website_name}_{lang1}",
+        match_threshold=match_threshold,
         aggregation_strategy=aggregation_strategy,
         batch_size=batch_size,
     )
-
-    lang2_embeddings = get_document_embeddings(
-        embedding_model=embedding_model,
-        documents=lang2_df.fulltext_joined,
-        embedding_directory=embedding_dir,
-        filename_identifier=f"{website_name}_{lang2}",
-        aggregation_strategy=aggregation_strategy,
-        batch_size=batch_size,
-    )
-
-    search_result = util.semantic_search(lang1_embeddings, lang2_embeddings, top_k=1)
-    matches = [
-        (i, e[0])
-        for i, e in enumerate(search_result)
-        if e[0]["score"] > match_threshold
-    ]
-    logger.debug("Number of matches: %s", len(matches))
 
     if matches:
-        lang1_indices = [i for i, _ in matches]
-        lang2_indices = [e["corpus_id"] for _, e in matches]
+        lang1_indices, lang2_indices = zip(*matches)
 
-        lang1_df = lang1_df.loc[lang1_indices]
-        lang1_df.index = range(len(lang1_df))
-
-        lang2_df = lang2_df.loc[lang2_indices]
-        lang2_df.index = range(len(lang2_df))
+        lang1_df = lang1_df.loc[list(lang1_indices)].reset_index(drop=True)
+        lang2_df = lang2_df.loc[list(lang2_indices)].reset_index(drop=True)
 
         df = lang1_df.merge(
             lang2_df, on=lang1_df.index, suffixes=("_" + lang1, "_" + lang2)
         )
         logger.debug("Number of aligned documents: %s", len(df))
+        logger.debug(df.columns)
         return df
 
     return pd.DataFrame()

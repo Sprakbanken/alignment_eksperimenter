@@ -1,64 +1,56 @@
 import logging
-import os
 from pathlib import Path
 import tomllib
+from dataclasses import dataclass
 
 from align_documents.types import AggregationStrategy
+from align_documents.utils import setup_logging
+from typing import Self
+
 
 logger = logging.getLogger(__name__)
 
 
-def validate_config(config: dict) -> dict:
-    if config["data_dir"]:
-        config["data_dir"] = Path(config["data_dir"])
-        if not config["data_dir"].exists():
-            raise ValueError("Data directory does not exist.")
-    else:
-        data_dir = os.environ.get("MALFRID", None)
-        if data_dir is None:
-            raise ValueError(
-                "No data directory provided (no data_dir in config file and no MALFRID environment variable)."
-            )
-        config["data_dir"] = Path(data_dir)
+@dataclass
+class Config:
+    data_dir: Path
+    embedding_dir: Path
+    output_dir: Path
+    embedding_model: str
+    match_threshold: float
+    aggregation_strategy: AggregationStrategy
+    batch_size: int
+    languages: tuple[str, str]
+    number_to_letter_ratio: float
+    min_document_length: int
 
-    config_keys = [
-        "output_dir",
-        "embedding_model",
-        "embedding_dir",
-        "batch_size",
-        "aggregation_strategy",
-        "match_threshold",
-        "languages",
-        "number_to_letter_ratio",
-        "min_document_length",
-    ]
-    for key in config_keys:
-        if key not in config:
-            raise ValueError(f"Missing key {key} in config file.")
+    def validate_and_cast(self):
+        self.data_dir = Path(self.data_dir)
+        if not self.data_dir.exists():
+            raise FileNotFoundError(f"data_dir {self.data_dir} does not exist.")
 
-    config_casts = {
-        "embedding_dir": lambda x: Path(x),
-        "output_dir": lambda x: Path(x),
-        "match_threshold": lambda x: float(x),
-        "aggregation_strategy": lambda x: AggregationStrategy(x),
-        "batch_size": lambda x: int(x),
-        "languages": lambda x: tuple(x),
-        "number_to_letter_ratio": lambda x: float(x),
-        "min_document_length": lambda x: int(x),
-    }
+        if len(self.languages) != 2:
+            raise ValueError("languages must (only) contain two languages")
 
-    for key, cast_function in config_casts.items():
-        config[key] = cast_function(config[key])
+        self.embedding_dir = Path(self.embedding_dir)
+        self.output_dir = Path(self.output_dir)
+        self.aggregation_strategy = AggregationStrategy(self.aggregation_strategy)
+        self.languages = tuple(self.languages)
 
-    if len(config["languages"]) != 2:
-        raise ValueError("languages must (only) contain two languages")
+    @classmethod
+    def from_dict(cls, config_dict: dict) -> Self:
+        config = Config(**config_dict)
+        config.validate_and_cast()
+        return config
 
-    return config
 
-def get_config(config_file: Path) -> dict:
+def get_config(config_file: Path) -> Config:
     with open(config_file, "rb") as f:
         config = tomllib.load(f)
+    return Config.from_dict(config)
 
-    logger.info(config)
-    return validate_config(config)
 
+if __name__ == "__main__":
+    setup_logging("config", log_level="DEBUG")
+    c = get_config(Path("alignment_config.toml"))
+    logger.info(c)
