@@ -160,21 +160,21 @@ def get_args():
     )
     parser.add_argument(
         "-p",
-        "--print-overview",
+        "--print_overview",
         action="store_true",
         help="Print dataset overview/aggregate stats to console",
     )
 
     parser.add_argument(
         "-P",
-        "--print-full",
+        "--print_full",
         action="store_true",
         help="Print full dataset stats to console",
     )
 
     parser.add_argument(
         "-t",
-        "--use-tokenizer",
+        "--use_tokenizer",
         action="store_true",
         help=(
             "Include tokenizer-dependent stats."

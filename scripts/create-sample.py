@@ -21,14 +21,14 @@ def get_args():
     )
 
     parser.add_argument(
-        "--src-dir",
+        "--src_dir",
         help="Override the directory from which to copy files from.",
         type=Path,
     )
 
     parser.add_argument(
         "-l",
-        "--both-langs",
+        "--both_langs",
         help=(
             "Copy only files that exist for both languages listed in"
             " alignment_config.toml, based on filename. Both languages will be"
@@ -39,7 +39,7 @@ def get_args():
 
     parser.add_argument(
         "-s",
-        "--sort-size",
+        "--sort_size",
         help=(
             "Sort by size.\n"
             "asc  => smaller files first\n"
