@@ -24,7 +24,7 @@ def get_args():
         "--config_file",
         help="Path to the config file for alignment",
         type=Path,
-        default=Path("alignment_config.toml"),
+        default=Path(CONFIG_PATH),
     )
     parser.add_argument(
         "-l",
