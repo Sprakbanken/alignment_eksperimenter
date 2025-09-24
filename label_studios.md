@@ -16,7 +16,7 @@ Selve installasjonen er veldig enkel, og dokumentasjonen (som jeg fulgte) på å
 1) Inne i Create Project er det en tab som heter Data import. Trykk på den og last opp filen dere vil bruke. 
 
 ### Labeling Setup
-1) Inne i Create Project er det en annen tab som heter Labeling Setup. Når dere trykker på den kommer dere til en meny med masse valg. Velg custom template      nederst i menyen, og lim inn denne koden i vinuet som popper opp og trykk Save: 
+1) Inne i Create Project er det en annen tab som heter Labeling Setup. Når dere trykker på den kommer dere til en meny med masse valg. Velg custom template      nederst i menyen, og lim inn denne koden i vinduet som popper opp og trykk Save: 
 
 <View>
   <Header value="Er disse tekstene parallelle?"/>
