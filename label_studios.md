@@ -2,7 +2,7 @@
 
 Selve installasjonen er veldig enkel, og dokumentasjonen (som jeg fulgte) på å installere Label Studios finnes her: https://labelstud.io/guide/quick_start
 
-1) ### Innstallasjon og innlogging
+1) ### Installasjon og innlogging
     pip install label-studio
     label-studio start
 
