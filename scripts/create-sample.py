@@ -52,9 +52,9 @@ def get_args():
     parser.add_argument(
         "-c", "-n",
         "--count",
-        help="Number of files to copy.",
+        help="Number of files to copy. Defaults to 200 files. Pass -1 to copy all files.",
         type=int,
-        default=(-1)
+        default=200
     )
 
     parser.add_argument(
