@@ -1,3 +1,4 @@
+import logging
 import argparse
 import os
 import shutil
@@ -5,6 +6,8 @@ from pathlib import Path
 
 from align_documents.utils.config import get_config, CONFIG_PATH
 from align_documents.utils.dataframe import get_file_info, get_websites_with_both_langs
+
+logger = logging.getLogger(__name__)
 
 def get_args():
     parser = argparse.ArgumentParser(
@@ -94,7 +97,7 @@ def prepare_directories(
             shutil.rmtree(dst)
             dst.mkdir(parents=True)
         else:
-            print("Aborting.")
+            logger.info("Aborting.")
             exit()
     elif merge:
         dst.mkdir(parents=True, exist_ok=True)
