@@ -1,9 +1,7 @@
 from pathlib import Path
 import logging
 from tqdm import tqdm
-from align_documents.utils.get_embedding_model import get_embedding_model
-from align_documents.utils.config import get_config
-from align_documents.utils import setup_logging
+from align_documents.utils import setup_logging, get_config, get_embedding_model
 from align_documents.utils.dataframe import (
     get_file_info,
     get_websites_with_both_langs,
