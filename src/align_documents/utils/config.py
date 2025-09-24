@@ -4,7 +4,6 @@ import tomllib
 from dataclasses import dataclass
 
 from align_documents.types import AggregationStrategy
-from align_documents.utils import setup_logging
 from typing import Self
 
 
@@ -51,6 +50,8 @@ def get_config(config_file: Path) -> Config:
 
 
 if __name__ == "__main__":
+    from align_documents.utils import setup_logging
+
     setup_logging("config", log_level="DEBUG")
     c = get_config(Path("alignment_config.toml"))
     logger.info(c)
