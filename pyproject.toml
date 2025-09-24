@@ -19,12 +19,18 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit>=4.2.0",
+    "pytest>=8.4.2",
     "ruff>=0.12.3",
 ]
 
 [project.scripts]
 info = "align_documents.info:main"
 align_all = "align_documents.align_all:main"
+
+[project.optional-dependencies]
+compare = [
+    "datasets>=4.1.1",
+]
 
 [build-system]
 requires = ["hatchling"]
