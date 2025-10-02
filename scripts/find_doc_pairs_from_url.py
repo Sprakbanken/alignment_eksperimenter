@@ -9,7 +9,7 @@ import pandas as pd
 from rapidfuzz import fuzz
 
 from align_documents.utils.config import get_config
-from align_documents.utils.logging import setup_logging
+from align_documents.utils import setup_logging
 
 logger = logging.getLogger(__name__)
 
