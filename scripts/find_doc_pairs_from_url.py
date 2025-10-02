@@ -81,15 +81,11 @@ if __name__ == "__main__":
     setup_logging("make_pairs_based_on_url", args.log_level)
     config = get_config(config_file=args.config_file)
 
-    source_p: Path = config.get("data_dir")
+    source_p = config.data_dir
+    lang_code_1 = config.languages[0]
+    lang_code_2 = config.languages[1]
+    output_dir = config.output_dir / "url_pairs"
 
-    languages: list[str] = config.get("languages")
-
-    lang_code_1: str = languages[0]
-    lang_code_2: str = languages[1]
-
-    output_dir: Path = config.get("output_dir")
-    output_dir = output_dir / "url_pairs"
     output_dir.mkdir(exist_ok=True, parents=True)
 
     file_group_regex = re.compile(rf"(.*?)(?:_{lang_code_1}|_{lang_code_2})")
