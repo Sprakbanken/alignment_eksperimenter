@@ -1,7 +1,0 @@
-2025-10-03 16:43:02,652 - INFO - Starting process
-2025-10-03 16:43:02,654 - INFO - Aligned docs language pairs dict_keys(['nno_nob', 'eng_nob', 'eng_nno'])
-2025-10-03 16:43:02,656 - INFO - Unaligned docs language pairs dict_keys(['eng_nob', 'eng_nno', 'nno_nob'])
-2025-10-03 16:43:02,656 - INFO - Found 20 overlapping domains across all language pairs and pos/neg alignment
-2025-10-03 16:43:02,657 - INFO - Write the first item of every positive/negative document pair files for each domain and language pair to data/output/data_for_manual_annotation/data_to_annotate.jsonl
-2025-10-03 16:43:02,775 - INFO - Split file into three files for annotation and save as csv
-2025-10-03 16:43:03,098 - INFO - Done. See output at data/output/data_for_manual_annotation

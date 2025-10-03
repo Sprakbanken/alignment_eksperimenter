@@ -50,14 +50,14 @@ def main(args):
         outfile,
     )
     with jsonlines.open(outfile, "w") as f:
-        for lang_pair, domain_set in pos_domains.items():
-            for domain in domain_set:
+        for lang_pair, domain_set in sorted(pos_domains.items()):
+            for domain in sorted(domain_set):
                 first_line = get_first_line_dict(
                     input_dir=args.positive_pairs, lang_pair=lang_pair, domain=domain
                 )
                 f.write({"assumed_aligned": True, **first_line})
-        for lang_pair, domain_set in neg_domains.items():
-            for domain in domain_set:
+        for lang_pair, domain_set in sorted(neg_domains.items()):
+            for domain in sorted(domain_set):
                 first_line = get_first_line_dict(
                     input_dir=args.negative_pairs, lang_pair=lang_pair, domain=domain
                 )
