@@ -83,13 +83,12 @@ if __name__ == "__main__":
 
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    file_group_regex = re.compile(rf"(.*?)(?:_{lang_code_1}|_{lang_code_2})")
+    file_group_regex = re.compile(rf"(?P<domain>.*?)(?:_{lang_code_1}|_{lang_code_2})")
 
     domain_groups = defaultdict(list)
     for file in source_p.iterdir():
-        match = file_group_regex.match(file.stem)
-        if match:
-            domain_groups[match.group(1)].append(file)
+        if match := file_group_regex.match(file.stem):
+            domain_groups[match.group('domain')].append(file)
         else:
             logger.warning(
                 f"File {file.name} does not match expected pattern and will be skipped."
