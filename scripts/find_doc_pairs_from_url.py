@@ -14,16 +14,11 @@ from align_documents.utils import setup_logging
 logger = logging.getLogger(__name__)
 
 
-def extract_language_code(url, lang_code_regex):
-    match = lang_code_regex.search(url)
-    return match.group(1) if match else None
-
-
 def normalize_url(url):
     return re.sub(r"/[a-z]{2}-[A-Z]{2}/", "/xx-XX/", url)
 
 
-def is_valid_url_pair(url1, url2, lang_code_regex, threshold=97):
+def is_valid_url_pair(url1, url2, threshold=97):
     return fuzz.ratio(normalize_url(url1), normalize_url(url2)) >= threshold
 
 
@@ -33,14 +28,14 @@ def ends_with_digit(string):
 
 
 def match_rows(
-    lang_code_1_row, lang_code_2_rows, lang_code_1, lang_code_2, lang_code_regex
+    lang_code_1_row, lang_code_2_rows, lang_code_1, lang_code_2
 ):
     matches = []
     lang_code_1_url = getattr(lang_code_1_row, "url")
 
     for lang_code_2_row in lang_code_2_rows:
         lang_code_2_url = getattr(lang_code_2_row, "url")
-        if is_valid_url_pair(lang_code_2_url, lang_code_1_url, lang_code_regex):
+        if is_valid_url_pair(lang_code_2_url, lang_code_1_url):
             matches.append(
                 {
                     f"{lang_code_1}_doc_hash": getattr(lang_code_1_row, "doc_hash"),
@@ -90,8 +85,6 @@ if __name__ == "__main__":
 
     file_group_regex = re.compile(rf"(.*?)(?:_{lang_code_1}|_{lang_code_2})")
 
-    lang_code_regex = re.compile(r"/([a-z]{2}-[A-Z]{2})/")
-
     domain_groups = defaultdict(list)
     for file in source_p.iterdir():
         match = file_group_regex.match(file.stem)
@@ -133,7 +126,7 @@ if __name__ == "__main__":
         with ThreadPoolExecutor() as executor:
             results = executor.map(
                 lambda row: match_rows(
-                    row, df_lang_code_2_rows, lang_code_1, lang_code_2, lang_code_regex
+                    row, df_lang_code_2_rows, lang_code_1, lang_code_2
                 ),
                 df_lang_code_1.itertuples(),
             )
