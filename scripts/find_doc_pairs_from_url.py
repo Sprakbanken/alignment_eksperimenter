@@ -2,11 +2,10 @@ import argparse
 import logging
 import re
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-
+from typing import Callable
 import pandas as pd
-from rapidfuzz import fuzz
+import numpy as np
+from rapidfuzz import fuzz, process
 
 from align_documents.utils.config import get_config
 from align_documents.utils import setup_logging
@@ -17,36 +16,9 @@ logger = logging.getLogger(__name__)
 def normalize_url(url):
     return re.sub(r"/[a-z]{2}-[A-Z]{2}/", "/xx-XX/", url)
 
-
-def is_valid_url_pair(url1, url2, threshold=97):
-    return fuzz.ratio(normalize_url(url1), normalize_url(url2)) >= threshold
-
-
 def ends_with_digit(string):
     match = re.search(r"(\d+)(?=\.$)", string)
     return bool(match) if match else False
-
-
-def match_rows(
-    lang_code_1_row, lang_code_2_rows, lang_code_1, lang_code_2
-):
-    matches = []
-    lang_code_1_url = getattr(lang_code_1_row, "url")
-
-    for lang_code_2_row in lang_code_2_rows:
-        lang_code_2_url = getattr(lang_code_2_row, "url")
-        if is_valid_url_pair(lang_code_2_url, lang_code_1_url):
-            matches.append(
-                {
-                    f"{lang_code_1}_doc_hash": getattr(lang_code_1_row, "doc_hash"),
-                    f"{lang_code_2}_doc_hash": getattr(lang_code_2_row, "doc_hash"),
-                    f"{lang_code_1}_url": getattr(lang_code_1_row, "url"),
-                    f"{lang_code_2}_url": getattr(lang_code_2_row, "url"),
-                    f"{lang_code_1}_fulltext": getattr(lang_code_1_row, "fulltext"),
-                    f"{lang_code_2}_fulltext": getattr(lang_code_2_row, "fulltext"),
-                }
-            )
-    return matches
 
 
 def contains_dates_or_many_numbers(url):
@@ -59,6 +31,36 @@ def contains_dates_or_many_numbers(url):
         )  # match just a digit at the end (e.g 06)
     )
 
+def compare_urls(
+    df_lang_code_1: pd.DataFrame,
+    df_lang_code_2: pd.DataFrame,
+    scorer: Callable[..., float] = fuzz.ratio,
+    score_cutoff: float = 97
+) -> pd.DataFrame:
+    all_matches = []
+
+    urls_normalized_1 = df_lang_code_1['url'].apply(normalize_url)
+    urls_normalized_2 = df_lang_code_2['url'].apply(normalize_url)
+
+    scores = process.cdist(
+        urls_normalized_1,
+        urls_normalized_2,
+        scorer=scorer,
+        score_cutoff=score_cutoff
+    )
+    indices = np.where(np.triu(scores, k=1))
+
+    for res_1, res_2 in zip(*indices):
+        all_matches.append({
+            f"{lang_code_1}_doc_hash": df_lang_code_1['doc_hash'].iloc[res_1],
+            f"{lang_code_2}_doc_hash": df_lang_code_2['doc_hash'].iloc[res_2],
+            f"{lang_code_1}_url": df_lang_code_1['url'].iloc[res_1],
+            f"{lang_code_2}_url": df_lang_code_2['url'].iloc[res_2],
+            f"{lang_code_1}_fulltext": df_lang_code_1['fulltext'].iloc[res_1],
+            f"{lang_code_2}_fulltext": df_lang_code_2['fulltext'].iloc[res_2],
+        })
+
+    return pd.DataFrame(all_matches)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -119,20 +121,8 @@ if __name__ == "__main__":
         df_lang_code_2 = pd.read_json(langs[lang_code_2], lines=True)
         df_lang_code_2 = df_lang_code_2[~df_lang_code_2['url'].apply(contains_dates_or_many_numbers)]
 
-        df_lang_code_2_rows = list(df_lang_code_2.itertuples())
-        all_matches = []
+        result_df = compare_urls(df_lang_code_1, df_lang_code_2, scorer=fuzz.ratio, score_cutoff=97)
 
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(
-                lambda row: match_rows(
-                    row, df_lang_code_2_rows, lang_code_1, lang_code_2
-                ),
-                df_lang_code_1.itertuples(),
-            )
-            for matched_rows in results:
-                all_matches.extend(matched_rows)
-
-        result_df = pd.DataFrame(all_matches)
         logger.debug(f"Matches found for {domain} before filtering: {len(result_df)}")
 
         if len(result_df) > 0:
@@ -149,3 +139,4 @@ if __name__ == "__main__":
             result_df_filtered.to_csv( output_dir / f"{domain}.csv", index=False)
         else:
             logger.debug( f"No valid matches found for {domain} after filtering. Skipping file.")
+
