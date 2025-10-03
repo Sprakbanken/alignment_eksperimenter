@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 def normalize_url(url):
     return re.sub(r"/[a-z]{2}-[A-Z]{2}/", "/xx-XX/", url)
 
+
 def ends_with_digit(string):
     match = re.search(r"(\d+)(?=\.$)", string)
     return bool(match) if match else False
@@ -30,6 +31,7 @@ def contains_dates_or_many_numbers(url):
             re.search(r"/[^/]*\d+/?$", url)
         )  # match just a digit at the end (e.g 06)
     )
+
 
 def compare_urls(
     df_lang_code_1: pd.DataFrame,
@@ -61,6 +63,7 @@ def compare_urls(
         })
 
     return pd.DataFrame(all_matches)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -100,7 +103,8 @@ if __name__ == "__main__":
                 f"File {file.name} does not match expected pattern and will be skipped."
             )
 
-    # Filter out domains missing desired lang codes
+    logger.debug("Filtering out languages not containing both langs")
+
     domain_groups_filtered = {
         domain: langs
         for domain, langs in domain_groups.items()
@@ -130,13 +134,10 @@ if __name__ == "__main__":
                 ~result_df[f"{lang_code_1}_url"].apply(ends_with_digit)
                 & ~result_df[f"{lang_code_2}_url"].apply(ends_with_digit)
             ]
-        else:
-            result_df_filtered = pd.DataFrame()
+            if len(result_df_filtered) > 0:
+                logger.info( f"Saving {len(result_df_filtered)} valid matches for {domain}.")
+                result_df_filtered.to_csv( output_dir / f"{domain}.csv", index=False)
+                continue
 
-        if len(result_df_filtered) > 0:
-            logger.info( f"Saving {len(result_df_filtered)} valid matches for {domain}.")
-            (output_dir / f"{lang_code_1}_{lang_code_2}").mkdir(exist_ok=True, parents=True)
-            result_df_filtered.to_csv( output_dir / f"{domain}.csv", index=False)
-        else:
-            logger.debug( f"No valid matches found for {domain} after filtering. Skipping file.")
+        logger.debug( f"No valid matches found for {domain} after filtering. Skipping file.")
 
