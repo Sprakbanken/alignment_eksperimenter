@@ -85,6 +85,8 @@ if __name__ == "__main__":
 
     file_group_regex = re.compile(rf"(?P<domain>.*?)_(?P<lang_code>{lang_code_1}|{lang_code_2})")
 
+    logger.info("Collecting files with languages: %s, %s.", lang_code_1, lang_code_2)
+
     domain_groups = defaultdict(dict)
     for file in source_p.iterdir():
         if match := file_group_regex.match(file.stem):
@@ -92,7 +94,7 @@ if __name__ == "__main__":
             lang_code = match.group('lang_code')
             domain_groups[domain][lang_code] = file
         else:
-            logger.warning(
+            logger.debug(
                 f"File {file.name} does not match expected pattern and will be skipped."
             )
 
@@ -102,11 +104,14 @@ if __name__ == "__main__":
         for domain, langs in domain_groups.items()
         if set([lang_code_1, lang_code_2]).issubset(langs.keys())
     }
-    logger.info(f"Domain groups: {len(domain_groups_filtered)}")
 
-    # Process each domain
+    # TODO: Collected files: ...
+    logger.info(f"Collected domains: {len(domain_groups_filtered)}")
+
+    logger.info(f"Processing domains...")
+
     for domain, langs in domain_groups_filtered.items():
-        logger.info(f"Processing domain: {domain}")
+        logger.debug(f"Processing domain: {domain}")
 
         df_lang_code_1 = pd.read_json(langs[lang_code_1], lines=True)
         df_lang_code_1 = df_lang_code_1[~df_lang_code_1['url'].apply(contains_dates_or_many_numbers)]
@@ -128,7 +133,7 @@ if __name__ == "__main__":
                 all_matches.extend(matched_rows)
 
         result_df = pd.DataFrame(all_matches)
-        logger.info(f"Matches found for {domain}: {len(result_df)}")
+        logger.debug(f"Matches found for {domain} before filtering: {len(result_df)}")
 
         if len(result_df) > 0:
             result_df_filtered = result_df[
@@ -138,17 +143,9 @@ if __name__ == "__main__":
         else:
             result_df_filtered = pd.DataFrame()
 
-        (output_dir / f"{lang_code_1}_{lang_code_2}").mkdir(exist_ok=True, parents=True)
-
         if len(result_df_filtered) > 0:
-            logger.info(
-                f"Writing {len(result_df_filtered)} valid matches for {domain} to file."
-            )
-            result_df_filtered.to_csv(
-                output_dir / f"{lang_code_1}_{lang_code_2}" / f"{domain}.csv",
-                index=False,
-            )
+            logger.info( f"Saving {len(result_df_filtered)} valid matches for {domain}.")
+            (output_dir / f"{lang_code_1}_{lang_code_2}").mkdir(exist_ok=True, parents=True)
+            result_df_filtered.to_csv( output_dir / f"{domain}.csv", index=False)
         else:
-            logger.warning(
-                f"No valid matches found for {domain} after filtering. Skipping file."
-            )
+            logger.debug( f"No valid matches found for {domain} after filtering. Skipping file.")
