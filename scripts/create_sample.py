@@ -102,7 +102,11 @@ def prepare_directories(
     elif merge:
         dst.mkdir(parents=True, exist_ok=True)
     else:
-        dst.mkdir(parents=True, exist_ok=False)
+        try:
+            dst.mkdir(parents=True, exist_ok=False)
+        except FileExistsError as e:
+            logger.critical(f"{dst} already exists. Consider using the merge or overwrite options.")
+            raise e
 
 
 def main(args: argparse.Namespace):
