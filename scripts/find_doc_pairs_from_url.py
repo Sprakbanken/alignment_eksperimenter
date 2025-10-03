@@ -83,41 +83,36 @@ if __name__ == "__main__":
 
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    file_group_regex = re.compile(rf"(?P<domain>.*?)(?:_{lang_code_1}|_{lang_code_2})")
+    file_group_regex = re.compile(rf"(?P<domain>.*?)_(?P<lang_code>{lang_code_1}|{lang_code_2})")
 
-    domain_groups = defaultdict(list)
+    domain_groups = defaultdict(dict)
     for file in source_p.iterdir():
         if match := file_group_regex.match(file.stem):
-            domain_groups[match.group('domain')].append(file)
+            domain = match.group('domain')
+            lang_code = match.group('lang_code')
+            domain_groups[domain][lang_code] = file
         else:
             logger.warning(
                 f"File {file.name} does not match expected pattern and will be skipped."
             )
 
-    grouped_files = [
-        (domain, tuple(files))
-        for domain, files in domain_groups.items()
-        if len(files) > 1
-    ]
-    logger.info(f"Grouped domains: {len(grouped_files)}")
+    # Filter out domains missing desired lang codes
+    domain_groups_filtered = {
+        domain: langs
+        for domain, langs in domain_groups.items()
+        if set([lang_code_1, lang_code_2]).issubset(langs.keys())
+    }
+    logger.info(f"Domain groups: {len(domain_groups_filtered)}")
 
-    # process each domain
-    for domain, files in grouped_files:
+    # Process each domain
+    for domain, langs in domain_groups_filtered.items():
         logger.info(f"Processing domain: {domain}")
-        df_lang_code_1 = pd.DataFrame()
-        df_lang_code_2 = pd.DataFrame()
 
-        for file in files:
-            if lang_code_1 in file.name:
-                df_lang_code_1 = pd.read_json(file, lines=True)
-                df_lang_code_1 = df_lang_code_1[
-                    ~df_lang_code_1["url"].apply(contains_dates_or_many_numbers)
-                ]
-            elif lang_code_2 in file.name:
-                df_lang_code_2 = pd.read_json(file, lines=True)
-                df_lang_code_2 = df_lang_code_2[
-                    ~df_lang_code_2["url"].apply(contains_dates_or_many_numbers)
-                ]
+        df_lang_code_1 = pd.read_json(langs[lang_code_1], lines=True)
+        df_lang_code_1 = df_lang_code_1[~df_lang_code_1['url'].apply(contains_dates_or_many_numbers)]
+
+        df_lang_code_2 = pd.read_json(langs[lang_code_2], lines=True)
+        df_lang_code_2 = df_lang_code_2[~df_lang_code_2['url'].apply(contains_dates_or_many_numbers)]
 
         df_lang_code_2_rows = list(df_lang_code_2.itertuples())
         all_matches = []
