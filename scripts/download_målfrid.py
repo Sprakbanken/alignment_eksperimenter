@@ -5,7 +5,7 @@ import argparse
 import gzip
 import shutil
 from pathlib import Path
-from align_documents.utils.logging import setup_logging
+from align_documents.utils import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,6 @@ def download_and_extract_malfrid(
         decompress_gz_files(data_path)
         logger.info("Decompression completed.")
 
-        # Optionally remove the tar file after extraction
         logger.info("Removing tar file...")
         tar_file_path.unlink()
         logger.info("Cleanup completed.")
