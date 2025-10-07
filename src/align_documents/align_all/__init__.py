@@ -57,7 +57,7 @@ def main():
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
     output_dir = config.output_dir / "aligned"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True)
 
     # Save alignment config to output directory
     config_outfile = config.output_dir / "alignment_config.toml"

@@ -114,15 +114,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = get_config(args.config_file)
-
-    setup_logging(
-        "find_negative_doc_pairs",
-        args.log_level,
-        log_dir=config.output_dir / "negative_pairs",
-    )
-
-    config = get_config(args.config_file)
-    logger.info("Alignment config: %s", config)
     logger.info(
         "Negative pairs config: min_threshold=%s, pairs_per_website=%s, total_pairs=%s",
         args.min_threshold,
