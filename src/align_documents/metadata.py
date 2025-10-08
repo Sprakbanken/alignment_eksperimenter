@@ -310,7 +310,7 @@ class AlignmentRun:
 
         self.input_hashtree: HashTree | None = None
         self.pipeline_input_hashtree: HashTree | None = None
-        self.output_hashtree: HashTree | None = None
+        # TODO: self.output_hashtree: HashTree | None = None
 
         input_dataset_metadata_dir = config.data_dir / DATASET_METADATA_DIRNAME
         input_hashtree_path =  input_dataset_metadata_dir / DATASET_HASHTREE_FILENAME
