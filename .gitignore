@@ -6,11 +6,6 @@ build/*
 .venv
 ._venv
 
-output
-data
-!data/output
-
-
 logs
 
 .pdm-python
@@ -24,3 +19,6 @@ devenv.local.nix
 
 # pre-commit
 .pre-commit-config.yaml
+
+maalfrid_2025*
+maalfrid_2022*
