@@ -204,9 +204,13 @@ def generate_hashtree(
     # leaf_is_prehashed: bool = True,
 ) -> HashTree:
     hashtree_internal = _generate_hashtree(docs, level_keys, leaf_name_key, leaf_hash_key)
+    assert(hashtree_internal["level"] == "__root__")
+
+    root_hash: str = hashtree_internal["hash"]
 
     return {
         "hashtree_created_date": datetime.now().strftime("%Y-%m-%d_%H-%M"),
+        "root_hash": root_hash,
         "level_keys": level_keys,
         "leaf_hash_key": leaf_hash_key,
         "leaf_name_key": leaf_name_key,
@@ -225,13 +229,18 @@ def get_dataset_hashtree(
     level_keys: Sequence[str] = ('domain','lang'),
     leaf_name_key: str = "url",
     leaf_hash_key: str = "doc_hash",
-) -> HashTree:
+) -> HashTree | None:
     metadata_dir = dataset_path / "metadata"
     hashtree_file = metadata_dir / "hashtree.json"
 
     if hashtree_file.is_file():
         logger.info("Using pre-existing dataset hashtree file: %s", hashtree_file)
         return cast(HashTree, json.loads(hashtree_file.read_bytes()))
+    else:
+        # TODO: Better explanation of consequences of generating vs not
+        answer = input("Could not find dataset hashtree. Generating it could take a long time. Do it now (else skip)? [Y/n]: ")
+        if not answer.lower() in ['y', 'yes']:
+            return None
 
     if dataset_metadata is None:
         dataset_metadata = get_dataset_metadata(dataset_path)
@@ -280,6 +289,9 @@ class AlignmentRun:
         parent_dir:
             'metadata' directory will be placed here.
         """
+        # Docs that were sent to the pipeline (align(), filter_and_align())
+        self.pipeline_input_docs_metadata: list[pd.DataFrame] = []
+
         self.output_dir: Final = output_dir
         self.config_path: Final = config_path
 
@@ -305,34 +317,19 @@ class AlignmentRun:
             "datasets": { }
         }
 
-        # Docs that were sent to the pipeline (align(), filter_and_align())
-        self.pipeline_input_docs_metadata: list[pd.DataFrame] = []
-
-        self.input_hashtree: HashTree | None = None
-        self.pipeline_input_hashtree: HashTree | None = None
-        # TODO: self.output_hashtree: HashTree | None = None
-
-        input_dataset_metadata_dir = config.data_dir / DATASET_METADATA_DIRNAME
-        input_hashtree_path =  input_dataset_metadata_dir / DATASET_HASHTREE_FILENAME
-
-        if not input_hashtree_path.is_file():
-            # TODO: Better explanation of consequences of generating vs not
-            answer = input("Could not find dataset hashtree. Generating it could take a long time. Do it now, or skip? [Y/n]: ")
-            if answer.lower() in ['y', 'yes']:
-                # TODO: Don't store this in memory until needed
-                self.input_hashtree = get_dataset_hashtree(config.data_dir)
-
-        if input_hashtree_path.is_file():
+        if input_hashtree := get_dataset_hashtree(config.data_dir):
             self.metadata_dict["datasets"]["input"] = {
-                "metadata_dir": input_dataset_metadata_dir,
+                "hashtree": {
+                    "root_hash": input_hashtree["root_hash"],
+                    "hashtree_path": config.data_dir / DATASET_METADATA_DIRNAME / DATASET_HASHTREE_FILENAME,
+                    "metadata_jsonl_path": config.data_dir / DATASET_METADATA_DIRNAME / DATASET_METADATA_FILENAME,
+                }
             }
 
 
     def extend_pipeline_input_docs(
         self,
         docs: pd.DataFrame,
-        # outdir_col_hierarchy: Sequence[str] = ("domain", "lang"),
-        # hash_col: str = "doc_hash",
     ) -> None:
         self.pipeline_input_docs_metadata.append(
             docs[DATASET_METADATA_SCHEMA.names]
@@ -348,9 +345,7 @@ class AlignmentRun:
         config_file_copy = self.output_dir / self.config_path.name
 
         # Write pipeline input hashtree
-        if not self.pipeline_input_docs_metadata:
-            logger.warning("No pipeline input docs metadata collected - skipping hashing.")
-        else:
+        if self.pipeline_input_docs_metadata:
             docs = pd.concat(self.pipeline_input_docs_metadata)
             hashtree = generate_hashtree(docs)
 
@@ -360,6 +355,8 @@ class AlignmentRun:
             self.metadata_dict["datasets"]["pipeline_input"] = {
                 "hashtree_file": pipeline_input_hashtree_file,
             }
+        else:
+            logger.warning("No pipeline input docs metadata collected - skipping hashing.")
 
         # TODO: Write output hashtree
 
