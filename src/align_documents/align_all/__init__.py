@@ -55,7 +55,6 @@ def main():
 
     # TODO: Specify revision?
     embedding_model = get_embedding_model(config.embedding_model)
-
     embedding_directory: Path = config.embedding_dir / config.embedding_model
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
@@ -68,6 +67,7 @@ def main():
         __name__,
         args,
         embedding_model,
+        output_dir,
         args.config_file,
     )
 
@@ -108,5 +108,5 @@ def main():
     logger.info("All aligned documents saved to %s", output_dir)
 
     metadata_dir = output_dir / "metadata"
-    run_metadata.write(metadata_dir)
+    run_metadata.write()
     logger.info("Metadata saved to %s.", metadata_dir)

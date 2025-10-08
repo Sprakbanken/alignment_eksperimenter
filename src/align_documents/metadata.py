@@ -262,6 +262,7 @@ class AlignmentRun:
         entrypoint: str,
         args: Namespace,
         embedding_model: SentenceTransformer,
+        output_dir: Path,
         config_path: Path,
         config: Config | None = None, # Can be supplied in case config is modified
     ):
@@ -271,7 +272,9 @@ class AlignmentRun:
         parent_dir:
             'metadata' directory will be placed here.
         """
+        self.output_dir: Final = output_dir
         self.config_path: Final = config_path
+
         config = config or get_config(config_path)
 
         try:
@@ -334,13 +337,13 @@ class AlignmentRun:
         )
 
 
-    def write(self, output_dir: Path):
-        output_dir.mkdir(exist_ok=True)
+    def write(self):
+        self.output_dir.mkdir(exist_ok=True)
 
         # Filenames
-        pipeline_input_hashtree_file = output_dir / "pipeline_input_hashtree.json"
-        metadata_file = output_dir / "metadata.json"
-        config_file_copy = output_dir / self.config_path.name
+        pipeline_input_hashtree_file = self.output_dir / "pipeline_input_hashtree.json"
+        metadata_file = self.output_dir / "metadata.json"
+        config_file_copy = self.output_dir / self.config_path.name
 
         # Write pipeline input hashtree
         if not self.pipeline_input_docs_metadata:
