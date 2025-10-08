@@ -1,29 +1,32 @@
-### Hvordan sette opp label-studio på egen maskin
+# Label studio 
 
-Selve installasjonen er veldig enkel, og dokumentasjonen (som jeg fulgte) på å installere Label Studios finnes her: https://labelstud.io/guide/quick_start
+## Installasjon og innlogging
+```
+uv sync --extra annotation
+uv run label-studio start
+```
 
-1) ### Installasjon og innlogging
-    pip install label-studio
-    label-studio start
+Etter å ha kjørt kommandoen label-studio start blir dere tatt med til startsiden og bedt om å opprette en bruker/logge inn. Gjør dette (kan bruke tullemail)
 
-2) Etter å ha kjørt kommandoen label-studio start blir dere tatt med til startsiden og bedt om å opprette en bruker/logge inn
-
-### Lage et nytt prosjekt
+### Lage et prosjekt og legg inn data
 1) Inne i Label Studio trykker dere på Create Project øverst til venstre
 2) Gi prosjektet et navn, og trykk Save
-
-### Dataimport
-1) Inne i Create Project er det en tab som heter Data import. Trykk på den og last opp filen dere vil bruke. 
+3) Inne i Create Project er det en knapp som heter Import. Trykk på den.
+4) Trykk på Upload Files og last opp filen dere vil bruke.
+5) Velg list of tasks i radioknappene
+6) Trykk på den blå Import-knappen
 
 ### Labeling Setup
-1) Inne i Create Project er det en annen tab som heter Labeling Setup. Når dere trykker på den kommer dere til en meny med masse valg. Velg custom template      nederst i menyen, og lim inn denne koden i vinduet som popper opp og trykk Save: 
-
+1) Trykk på Settings øverst til høyre
+2) Velg Labeling Interface i menyen til venstre
+3) Lim inn følgende snutt og trykk Save
+```html
 <View>
   <Header value="Er disse tekstene parallelle?"/>
 
   <Choices name="aligned" toName="lang1" choice="single">
-    <Choice value="True"/>
-    <Choice value="False"/>
+    <Choice value="Parallell"/>
+    <Choice value="Not parallell"/>
     <Choice value="Almost parallel"/>
     <Choice value="Something is wrong"/>
   </Choices>
@@ -40,14 +43,15 @@ Selve installasjonen er veldig enkel, og dokumentasjonen (som jeg fulgte) på å
 
   <View className="parallel-container">
     <View className="parallel-block">
-      <Header value="LANG 1"/>
+      <Header value="$lang_lang_1"/>
       <Text name="lang1" value="$fulltext_joined_lang_1"/>
     </View>
     <View className="parallel-block">
-      <Header value="LANG 2"/>
+      <Header value="$lang_lang_2"/>
       <Text name="lang2" value="$fulltext_joined_lang_2"/>
     </View>
   </View>
 </View>
+```
 
 
