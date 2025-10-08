@@ -247,8 +247,16 @@ def get_dataset_hashtree(
     return hashtree
 
 
-def get_git_metadata(repo: git.Repo):
+def get_git_metadata(repo: git.Repo | None = None):
+    if repo is None:
+        try:
+            repo = git.Repo(".", search_parent_directories=True)
+        except git.InvalidGitRepositoryError:
+            logger.warning("Invalid git repository - will not save git metadata.")
+            return None
+
     commit = repo.head.commit
+
     return {
         "commit_hash": commit.hexsha,
         "commit_date": commit.committed_datetime.isoformat(),
@@ -277,12 +285,6 @@ class AlignmentRun:
 
         config = config or get_config(config_path)
 
-        try:
-            git_repo = git.Repo(".", search_parent_directories=True)
-            git_info = get_git_metadata(git_repo)
-        except git.InvalidGitRepositoryError:
-            git_info = {}
-
         _model_card_data_dense: Final = {
             k:v for k,v in embedding_model.model_card_data.to_dict().items()
             if v and v != False # Keep explicit False values
@@ -293,7 +295,7 @@ class AlignmentRun:
         self.metadata_dict: dict[str, dict[str, Any]] = {
             "pipeline": {
                 "entrypoint": entrypoint,
-                "git_info": git_info,
+                "git_info": get_git_metadata(),
                 "args": vars(args),
                 "config": dataclasses.asdict(config),
             },
