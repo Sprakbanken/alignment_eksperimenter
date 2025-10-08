@@ -290,7 +290,7 @@ class AlignmentRun:
             'metadata' directory will be placed here.
         """
         # Docs that were sent to the pipeline (align(), filter_and_align())
-        self.pipeline_input_docs_metadata: list[pd.DataFrame] = []
+        self.pipeline_input_docs: list[pd.DataFrame] = []
 
         self.output_dir: Final = output_dir
         self.config_path: Final = config_path
@@ -331,7 +331,7 @@ class AlignmentRun:
         self,
         docs: pd.DataFrame,
     ) -> None:
-        self.pipeline_input_docs_metadata.append(
+        self.pipeline_input_docs.append(
             docs[DATASET_METADATA_SCHEMA.names]
         )
 
@@ -345,8 +345,8 @@ class AlignmentRun:
         config_file_copy = self.output_dir / self.config_path.name
 
         # Write pipeline input hashtree
-        if self.pipeline_input_docs_metadata:
-            docs = pd.concat(self.pipeline_input_docs_metadata)
+        if self.pipeline_input_docs:
+            docs = pd.concat(self.pipeline_input_docs)
             hashtree = generate_hashtree(docs)
 
             write_hashtree(pipeline_input_hashtree_file, hashtree)
