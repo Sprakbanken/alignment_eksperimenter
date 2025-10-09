@@ -59,7 +59,8 @@ def main():
     embedding_directory.mkdir(exist_ok=True, parents=True)
 
     output_dir = config.output_dir / "aligned"
-    output_dir.mkdir(parents=True)
+    output_dir_data = output_dir / "data"
+    output_dir_data.mkdir(parents=True)
 
     lang_1, lang_2 = config.languages
 
@@ -99,14 +100,13 @@ def main():
             min_doc_len=config.min_document_length,
             number_to_letter_ratio=config.number_to_letter_ratio,
         )
-        outfile = output_dir / f"{website}_{lang_1}_{lang_2}.jsonl"
+        outfile = output_dir_data / f"{website}_{lang_1}_{lang_2}.jsonl"
         if not aligned_documents.empty:
             aligned_documents.to_json(
                 outfile, lines=True, orient="records", index=False
             )
 
-    logger.info("All aligned documents saved to %s", output_dir)
+    logger.info("All aligned documents saved to %s", output_dir_data)
 
-    metadata_dir = output_dir / "metadata"
     run_metadata.write()
-    logger.info("Metadata saved to %s.", metadata_dir)
+    logger.info("Metadata saved to %s.", run_metadata.metadata_dir)
