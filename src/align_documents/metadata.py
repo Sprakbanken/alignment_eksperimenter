@@ -318,17 +318,18 @@ class AlignmentRun:
 
         # TODO: Make this defined through dataclass or typeddict,
         #        and make it stably hashable
-        self.metadata_dict: dict[str, dict[str, Any]] = {
+        self.metadata_dict: dict[str, str | dict[str, Any]] = {
+            "created_date": datetime.now().strftime("%Y-%m-%d_%H-%M"),
             "pipeline": {
                 "entrypoint": entrypoint,
                 "git_info": get_git_metadata(),
                 "args": vars(args),
                 "config": dataclasses.asdict(config),
             },
+            "datasets": { },
             "embedding_model": {
                 "model_card_data_dense": _model_card_data_dense,
             },
-            "datasets": { }
         }
 
         if input_hashtree := get_dataset_hashtree(config.data_dir):
