@@ -214,9 +214,13 @@ def generate_hashtree(
     }
 
 
-def write_hashtree(path: Path, hashtree: HashTree):
+def write_hashtree(path: Path, hashtree: HashTree) -> None:
     with open(path, "w") as f:
         json.dump(hashtree, f)
+
+
+def read_hashtree(path: Path) -> HashTree:
+    return json.loads(path.read_bytes())
 
 
 def get_dataset_hashtree(
@@ -231,7 +235,7 @@ def get_dataset_hashtree(
 
     if hashtree_file.is_file():
         logger.info("Using pre-existing dataset hashtree file: %s", hashtree_file)
-        return cast(HashTree, json.loads(hashtree_file.read_bytes()))
+        return read_hashtree(hashtree_file)
     else:
         # TODO: Better explanation of consequences of generating vs not
         answer = input("Could not find dataset hashtree. Generating it could take a long time. Do it now (else skip)? [Y/n]: ")
