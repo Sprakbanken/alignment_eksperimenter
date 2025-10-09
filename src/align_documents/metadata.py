@@ -301,8 +301,11 @@ class AlignmentRun:
         self._pipeline_input_docs_df: pd.DataFrame = pd.DataFrame()
         self._pipeline_input_docs_dirty: bool = True
 
-        self.output_dir: Final = output_dir
+        self.pipeline_output_dir: Final = output_dir
+        self.metadata_dir: Final = output_dir / "metadata"
         self.config_path: Final = config_path
+
+        self.pipeline_output_dir.mkdir(exist_ok=True)
 
         config = config or get_config(config_path)
 
@@ -373,12 +376,12 @@ class AlignmentRun:
 
 
     def write(self):
-        self.output_dir.mkdir(exist_ok=True)
+        self.metadata_dir.mkdir(exist_ok=True)
 
         # Filenames
-        pipeline_input_hashtree_file = self.output_dir / "pipeline_input_hashtree.json"
-        metadata_file = self.output_dir / "metadata.json"
-        config_file_copy = self.output_dir / self.config_path.name
+        pipeline_input_hashtree_file = self.metadata_dir / "pipeline_input_hashtree.json"
+        metadata_file = self.metadata_dir / "metadata.json"
+        config_file_copy = self.metadata_dir / self.config_path.name
 
         hashtree = generate_hashtree(self.pipeline_input_docs)
 
