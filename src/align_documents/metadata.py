@@ -17,6 +17,7 @@ from sentence_transformers import SentenceTransformer
 import git
 
 from align_documents.utils.config import Config, get_config
+import align_documents.utils as utils
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +206,7 @@ def generate_hashtree(
     root_hash: str = hashtree_internal["hash"]
 
     return {
-        "hashtree_created_date": datetime.now().strftime("%Y-%m-%d_%H-%M"),
+        "hashtree_created_date": utils.get_time(),
         "root_hash": root_hash,
         "level_keys": level_keys,
         "leaf_hash_key": leaf_hash_key,
@@ -319,7 +320,7 @@ class AlignmentRun:
         # TODO: Make this defined through dataclass or typeddict,
         #        and make it stably hashable
         self.metadata_dict: dict[str, str | dict[str, Any]] = {
-            "created_date": datetime.now().strftime("%Y-%m-%d_%H-%M"),
+            "created_date": utils.get_time(),
             "pipeline": {
                 "entrypoint": entrypoint,
                 "git_info": get_git_metadata(),
