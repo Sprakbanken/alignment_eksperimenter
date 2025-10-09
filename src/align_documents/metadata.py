@@ -194,10 +194,10 @@ def generate_hashtree(
     level_keys: Sequence[str] = ('domain','lang'),
     leaf_name_key: str = "url",
     leaf_hash_key: str = "doc_hash",
-) -> HashTree | None:
+) -> HashTree:
     if docs.empty:
-        logger.warning("generate_hashtree received empty dataset; returning None.")
-        return None
+        logger.warning("generate_hashtree received empty dataset.")
+        return HashTree()
 
     hashtree_internal = _generate_hashtree(docs, level_keys, leaf_name_key, leaf_hash_key)
     assert(hashtree_internal["level"] == "__root__")
@@ -249,8 +249,8 @@ def get_dataset_hashtree(
 
     hashtree = generate_hashtree(dataset_metadata, level_keys, leaf_name_key, leaf_hash_key)
 
-    if hashtree is None:
-        logger.warning("Couldn't generate hashtree for dataset: %s", dataset_path)
+    if not hashtree:
+        logger.warning("Received empty hashtree - will not write. Dataset path: %s", dataset_path)
         return None
 
     logger.info("Hashtree generated.")
@@ -328,6 +328,7 @@ class AlignmentRun:
         }
 
         if input_hashtree := get_dataset_hashtree(config.data_dir):
+            # TODO: Function to create this metadata entry
             self.metadata_dict["datasets"]["input"] = {
                 "hashtree": {
                     "root_hash": input_hashtree["root_hash"],
@@ -371,8 +372,8 @@ class AlignmentRun:
         else:
             hashtree = generate_hashtree(self.pipeline_input_docs)
 
-            if hashtree is None:
-                logger.error("Couldn't generate hashtree for pipeline input")
+            if not hashtree:
+                logger.error("Got empty hashtree for non-empty pipeline input")
             else:
                 write_hashtree(pipeline_input_hashtree_file, hashtree)
                 logger.debug("Hashtree written for pipeline input: %s", pipeline_input_hashtree_file)
