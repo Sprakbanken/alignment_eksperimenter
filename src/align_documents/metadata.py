@@ -216,7 +216,8 @@ def generate_hashtree(
 
 def write_hashtree(path: Path, hashtree: HashTree) -> None:
     with open(path, "w") as f:
-        json.dump(hashtree, f)
+        # NOTE: ~20% size-increase from indent=1
+        json.dump(hashtree, f, indent=1)
 
 
 def read_hashtree(path: Path) -> HashTree:
@@ -400,7 +401,7 @@ class AlignmentRun:
 
         # TODO: Write output hashtree
 
-        metadata_file.write_text(json.dumps(self.metadata_dict, default=str))
+        metadata_file.write_text(json.dumps(self.metadata_dict, default=str, indent=2))
         logger.debug("metadata.json written to %s", metadata_file)
 
         # TODO: Write this at the start of the pipeline run like before? In constructor?
