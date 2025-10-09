@@ -329,14 +329,28 @@ class AlignmentRun:
 
         if input_hashtree := get_dataset_hashtree(config.data_dir):
             # TODO: Function to create this metadata entry
-            self.metadata_dict["datasets"]["input"] = {
-                "hashtree": {
-                    "root_hash": input_hashtree["root_hash"],
-                    "hashtree_path": config.data_dir / DATASET_METADATA_DIRNAME / DATASET_HASHTREE_FILENAME,
-                    "metadata_jsonl_path": config.data_dir / DATASET_METADATA_DIRNAME / DATASET_METADATA_FILENAME,
-                }
-            }
+            self.metadata_dict["datasets"]["input"] = self.create_metadata_dataset_entry(
+                hashtree =  input_hashtree,
+                hashtree_path = config.data_dir / DATASET_METADATA_DIRNAME / DATASET_HASHTREE_FILENAME,
+                metadata_path = config.data_dir / DATASET_METADATA_DIRNAME / DATASET_METADATA_FILENAME,
+            )
 
+    # TODO: TypedDict instead
+    def create_metadata_dataset_entry(
+        self,
+        hashtree_path: str | Path | None = None,
+        hashtree: HashTree | None = None,
+        metadata_path: str | Path | None = None,
+    ):
+        entry = {
+            "metadata_path": metadata_path,
+            "hashtree": {
+                "hashtree_path": hashtree_path,
+                "root_hash": hashtree["root_hash"] if hashtree else None
+            },
+        }
+
+        return {k:v for k,v in entry.items() if v}
 
     def extend_pipeline_input_docs(
         self,
@@ -375,9 +389,11 @@ class AlignmentRun:
         else:
             write_hashtree(pipeline_input_hashtree_file, hashtree)
             logger.debug("Hashtree written for pipeline input: %s", pipeline_input_hashtree_file)
-            self.metadata_dict["datasets"]["pipeline_input"] = {
-                "hashtree_file": pipeline_input_hashtree_file,
-            }
+
+            self.metadata_dict["datasets"]["pipeline_input"] = self.create_metadata_dataset_entry(
+                hashtree = hashtree,
+                hashtree_path = pipeline_input_hashtree_file,
+            )
 
         # TODO: Write output hashtree
 
