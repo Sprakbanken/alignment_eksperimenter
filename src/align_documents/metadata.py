@@ -366,21 +366,18 @@ class AlignmentRun:
         metadata_file = self.output_dir / "metadata.json"
         config_file_copy = self.output_dir / self.config_path.name
 
-        # Write pipeline input hashtree
+        hashtree = generate_hashtree(self.pipeline_input_docs)
+
         if self.pipeline_input_docs.empty:
-            logger.warning("No pipeline input docs metadata collected - skipping hashing.")
+            logger.warning("Pipeline input docs empty.")
+        elif not hashtree and not self.pipeline_input_docs.empty:
+            logger.error("Got empty hashtree for non-empty pipeline input")
         else:
-            hashtree = generate_hashtree(self.pipeline_input_docs)
-
-            if not hashtree:
-                logger.error("Got empty hashtree for non-empty pipeline input")
-            else:
-                write_hashtree(pipeline_input_hashtree_file, hashtree)
-                logger.debug("Hashtree written for pipeline input: %s", pipeline_input_hashtree_file)
-
-                self.metadata_dict["datasets"]["pipeline_input"] = {
-                    "hashtree_file": pipeline_input_hashtree_file,
-                }
+            write_hashtree(pipeline_input_hashtree_file, hashtree)
+            logger.debug("Hashtree written for pipeline input: %s", pipeline_input_hashtree_file)
+            self.metadata_dict["datasets"]["pipeline_input"] = {
+                "hashtree_file": pipeline_input_hashtree_file,
+            }
 
         # TODO: Write output hashtree
 
