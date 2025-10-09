@@ -5,7 +5,7 @@ import dataclasses
 from pathlib import Path
 import json
 from datetime import datetime
-from typing import Any, Final, Literal, TypeAlias, cast
+from typing import Any, Final, Literal, TypeAlias
 from collections.abc import Sequence
 import logging
 import hashlib
@@ -295,7 +295,11 @@ class AlignmentRun:
             'metadata' directory will be placed here.
         """
         # Docs that were sent to the pipeline (align(), filter_and_align())
-        self.pipeline_input_docs: list[pd.DataFrame] = []
+        # Extend through self.extend_pipeline_input_docs
+        # Retrieve `pd.concat`ed dataframe from @property self.pipeline_input_docs
+        self._pipeline_input_docs_list: list[pd.DataFrame] = []
+        self._pipeline_input_docs_df: pd.DataFrame = pd.DataFrame()
+        self._pipeline_input_docs_dirty: bool = True
 
         self.output_dir: Final = output_dir
         self.config_path: Final = config_path
@@ -337,9 +341,20 @@ class AlignmentRun:
         self,
         docs: pd.DataFrame,
     ) -> None:
-        self.pipeline_input_docs.append(
+        self._pipeline_input_docs_list.append(
             docs[DATASET_METADATA_SCHEMA.names]
         )
+        self._pipeline_input_docs_dirty = True
+
+
+    @property
+    def pipeline_input_docs(self) -> pd.DataFrame:
+        if not self._pipeline_input_docs_list:
+            return pd.DataFrame()
+        elif self._pipeline_input_docs_dirty:
+            self._pipeline_input_docs_df = pd.concat(self._pipeline_input_docs_list)
+
+        return self._pipeline_input_docs_df
 
 
     def write(self):
@@ -351,10 +366,10 @@ class AlignmentRun:
         config_file_copy = self.output_dir / self.config_path.name
 
         # Write pipeline input hashtree
-        if not self.pipeline_input_docs:
+        if not self._pipeline_input_docs_list:
             logger.warning("No pipeline input docs metadata collected - skipping hashing.")
         else:
-            docs = pd.concat(self.pipeline_input_docs)
+            docs = pd.concat(self._pipeline_input_docs_list)
             hashtree = generate_hashtree(docs)
 
             if hashtree is None:
