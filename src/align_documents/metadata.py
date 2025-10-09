@@ -50,7 +50,7 @@ def generate_dataset_metadata(
     if write_filepath is None:
         write_filepath = dataset_path / DATASET_METADATA_DIRNAME / DATASET_METADATA_FILENAME
 
-    # We need the entire dataset, but some columns.
+    # We need the entire dataset, but only some columns.
     # utils.dataframe.jsonl_files_to_df is too inefficient for this.
 
     format = padataset.JsonFileFormat(
@@ -88,49 +88,40 @@ def get_dataset_metadata(
     return generate_dataset_metadata(dataset_path, metadata_filepath)
 
 
+# TODO: Ability to hash the 'fulltext' column instead of using pre-calculated hash
 def _generate_hashtree(
     docs: pd.DataFrame,
     level_keys: Sequence[str] = ('domain','lang'),
     leaf_name_key: str = "url",
     leaf_hash_key: str = "doc_hash",
-    # leaf_is_prehashed: bool = True,
 ) -> _HashTreeInternal:
     """
+    Uniform-depth tree. Only last level has leaves.
+
     Hashtree dict/json structure example with default parameters:
     {
-        // 
-        // "level_keys": [ "domain", "lang" ], # ordered list of keys/columns to group/branch by
-        // "leaf_hash_key": "doc_hash",        # key/column to use as leaf hash value
-
-        // Ordered, uniform-depth tree.
-        // Only last level has leaves, and has no branches.
-        "hash_tree": {
-            "hash": <root_hash>,  # = _hash_hashlist(<domain_hashes>)
-            "level": "__root__",
-            "branches": {
-                "mydomain.com": {
-                    "hash": <domain_hash>,  # = _hash_hashlist(<lang_hashes>)
-                    "level": "domain",
-                    "branches": {
-                        "nno", {
-                            "hash": <lang_hash>,  # = _hash_hashlist(<doc_hashes>)
-                            "level": "lang",
-                            "branches": {
-                                "<url_i>": {
-                                    "hash": <doc_hash>,
-                                    "level": "__leaf__"
-                                }
-                                "<url_i+1>": { ... },
-                                ...
+        "hash": <root_hash>,  # = _hash_hashlist(<domain_hashes>)
+        "level": "__root__",
+        "branches": {
+            "mydomain.com": {
+                "hash": <domain_hash>,  # = _hash_hashlist(<lang_hashes>)
+                "level": "domain",
+                "branches": {
+                    "nno", {
+                        "hash": <lang_hash>,  # = _hash_hashlist(<doc_hashes>)
+                        "level": "lang",
+                        "branches": {
+                            "<url_i>": {
+                                "hash": <doc_hash>,
+                                "level": "__leaf__"
                             }
-                        },
-                        "nob": { ... },
-                        ...
-                    }
-                },
-                "nextdomain.no": { ... },
-                ...
-            }
+                            "<url_i+1>": { ... }, ...
+                        }
+                    },
+                    "nob": { ... }, ...
+                }
+            },
+            "nextdomain.no": { ... }, ...
         }
     }
     """
@@ -138,10 +129,12 @@ def _generate_hashtree(
         hashlist: list[str],
         type_: Literal["leaf", "inode"]
     ) -> str:
-        prefix = str(int(type_ == "inode")) # leaf: 0, inode: 1
+        prefix = str(int(type_ == "inode")) # domain-separation - leaf: 0, inode: 1
         concat = prefix + "".join(sorted(hashlist))
         return HASH_FN(concat.encode()).hexdigest()
 
+    # We re-enter by finding rows with matching `level_key`s. Empty initial
+    #  data should be handled by caller.
     assert not docs.empty
 
     KEY_HASH: Final = "hash"
@@ -201,7 +194,6 @@ def generate_hashtree(
     level_keys: Sequence[str] = ('domain','lang'),
     leaf_name_key: str = "url",
     leaf_hash_key: str = "doc_hash",
-    # leaf_is_prehashed: bool = True,
 ) -> HashTree:
     hashtree_internal = _generate_hashtree(docs, level_keys, leaf_name_key, leaf_hash_key)
     assert(hashtree_internal["level"] == "__root__")
@@ -242,16 +234,16 @@ def get_dataset_hashtree(
         if not answer.lower() in ['y', 'yes']:
             return None
 
+    logger.info("Generating hashtree...")
+
     if dataset_metadata is None:
         dataset_metadata = get_dataset_metadata(dataset_path)
-
-    logger.info("Hashtree file not found. Generating...")
 
     hashtree = generate_hashtree(dataset_metadata, level_keys, leaf_name_key, leaf_hash_key)
     logger.info("Hashtree generated.")
 
     write_hashtree(hashtree_file, hashtree)
-    logger.info("Hashtree written.")
+    logger.info("Hashtree written to %s.", hashtree_file)
 
     return hashtree
 
@@ -297,6 +289,7 @@ class AlignmentRun:
 
         config = config or get_config(config_path)
 
+        # model_card_data has a lot of attributes - keep only non-empty data.
         _model_card_data_dense: Final = {
             k:v for k,v in embedding_model.model_card_data.to_dict().items()
             if v and v != False # Keep explicit False values
@@ -363,6 +356,7 @@ class AlignmentRun:
         metadata_file.write_text(json.dumps(self.metadata_dict, default=str))
         logger.debug("metadata.json written to %s", metadata_file)
 
+        # TODO: Write this at the start of the pipeline run like before? In constructor?
         config_file_copy.write_text(self.config_path.read_text())
         logger.debug("config file copied to to %s", config_file_copy)
 
