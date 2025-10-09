@@ -366,11 +366,10 @@ class AlignmentRun:
         config_file_copy = self.output_dir / self.config_path.name
 
         # Write pipeline input hashtree
-        if not self._pipeline_input_docs_list:
+        if self.pipeline_input_docs.empty:
             logger.warning("No pipeline input docs metadata collected - skipping hashing.")
         else:
-            docs = pd.concat(self._pipeline_input_docs_list)
-            hashtree = generate_hashtree(docs)
+            hashtree = generate_hashtree(self.pipeline_input_docs)
 
             if hashtree is None:
                 logger.error("Couldn't generate hashtree for pipeline input")
