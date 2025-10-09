@@ -194,7 +194,11 @@ def generate_hashtree(
     level_keys: Sequence[str] = ('domain','lang'),
     leaf_name_key: str = "url",
     leaf_hash_key: str = "doc_hash",
-) -> HashTree:
+) -> HashTree | None:
+    if docs.empty:
+        logger.warning("generate_hashtree received empty dataset; returning None.")
+        return None
+
     hashtree_internal = _generate_hashtree(docs, level_keys, leaf_name_key, leaf_hash_key)
     assert(hashtree_internal["level"] == "__root__")
 
@@ -240,6 +244,11 @@ def get_dataset_hashtree(
         dataset_metadata = get_dataset_metadata(dataset_path)
 
     hashtree = generate_hashtree(dataset_metadata, level_keys, leaf_name_key, leaf_hash_key)
+
+    if hashtree is None:
+        logger.warning("Couldn't generate hashtree for dataset: %s", dataset_path)
+        return None
+
     logger.info("Hashtree generated.")
 
     write_hashtree(hashtree_file, hashtree)
@@ -338,18 +347,21 @@ class AlignmentRun:
         config_file_copy = self.output_dir / self.config_path.name
 
         # Write pipeline input hashtree
-        if self.pipeline_input_docs:
+        if not self.pipeline_input_docs:
+            logger.warning("No pipeline input docs metadata collected - skipping hashing.")
+        else:
             docs = pd.concat(self.pipeline_input_docs)
             hashtree = generate_hashtree(docs)
 
-            write_hashtree(pipeline_input_hashtree_file, hashtree)
-            logger.debug("Hashtree written for pipeline input: %s", pipeline_input_hashtree_file)
+            if hashtree is None:
+                logger.error("Couldn't generate hashtree for pipeline input")
+            else:
+                write_hashtree(pipeline_input_hashtree_file, hashtree)
+                logger.debug("Hashtree written for pipeline input: %s", pipeline_input_hashtree_file)
 
-            self.metadata_dict["datasets"]["pipeline_input"] = {
-                "hashtree_file": pipeline_input_hashtree_file,
-            }
-        else:
-            logger.warning("No pipeline input docs metadata collected - skipping hashing.")
+                self.metadata_dict["datasets"]["pipeline_input"] = {
+                    "hashtree_file": pipeline_input_hashtree_file,
+                }
 
         # TODO: Write output hashtree
 
