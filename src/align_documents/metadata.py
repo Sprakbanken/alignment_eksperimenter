@@ -334,7 +334,6 @@ class AlignmentRun:
         }
 
         if input_hashtree := get_dataset_hashtree(config.data_dir):
-            # TODO: Function to create this metadata entry
             self.metadata_dict["datasets"]["input"] = self.create_metadata_dataset_entry(
                 hashtree =  input_hashtree,
                 hashtree_path = config.data_dir / DATASET_METADATA_DIRNAME / DATASET_HASHTREE_FILENAME,
