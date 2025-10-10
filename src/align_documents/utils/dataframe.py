@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import logging
 from functools import partial
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 import regex as re
 
 
@@ -29,7 +29,7 @@ def get_websites_with_both_langs(
     )
 
 
-def jsonl_files_to_df(filepaths: Path) -> pd.DataFrame:
+def jsonl_files_to_df(filepaths: Iterable[str | Path]) -> pd.DataFrame:
     dfs = []
     for path in filepaths:
         logger.debug("Reading into dataframe: %s", path)
