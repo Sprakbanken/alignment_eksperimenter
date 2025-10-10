@@ -21,7 +21,6 @@ import align_documents.utils as utils
 
 logger = logging.getLogger(__name__)
 
-# TODO: TypedDict
 _HashTreeInternal: TypeAlias = dict[str, "str | dict[str, _HashTreeInternal]"]
 HashTree: TypeAlias =  dict[str, str | Sequence[str] | _HashTreeInternal]
 
@@ -33,7 +32,6 @@ DATASET_METADATA_DIRNAME = "metadata"
 DATASET_METADATA_FILENAME = "metadata.json"
 DATASET_HASHTREE_FILENAME = "hashtree.json"
 
-# TODO: Use this schema project-wide
 DATASET_METADATA_SCHEMA = pa.schema([
     pa.field("doc_hash", pa.string()),
     pa.field("lang", pa.string()),
@@ -67,8 +65,6 @@ def generate_dataset_metadata(
     metadata_df = dataset.to_table().to_pandas()
 
     write_filepath.parent.mkdir(exist_ok=False)
-    # TODO: Avoid escaping forward-slashes (especially in urls)
-    #           If done, then, then also do so in the pipeline when writing outputs
     metadata_df.to_json(write_filepath, lines=True, orient="records")
 
     logger.info("Dataset metadata written to %s", write_filepath)
@@ -89,7 +85,6 @@ def get_dataset_metadata(
     return generate_dataset_metadata(dataset_path, metadata_filepath)
 
 
-# TODO: Ability to hash the 'fulltext' column instead of using pre-calculated hash
 def _generate_hashtree(
     docs: pd.DataFrame,
     level_keys: Sequence[str] = ('domain','lang'),
@@ -239,7 +234,6 @@ def get_dataset_hashtree(
         logger.info("Using pre-existing dataset hashtree file: %s", hashtree_file)
         return read_hashtree(hashtree_file)
     else:
-        # TODO: Better explanation of consequences of generating vs not
         answer = input("Could not find dataset hashtree. Generating it could take a long time. Do it now (else skip)? [Y/n]: ")
         if not answer.lower() in ['y', 'yes']:
             return None
@@ -317,8 +311,6 @@ class AlignmentRun:
             if v and v != False # Keep explicit False values
         }
 
-        # TODO: Make this defined through dataclass or typeddict,
-        #        and make it stably hashable
         self.metadata_dict: dict[str, str | dict[str, Any]] = {
             "created_date": utils.get_time(),
             "pipeline": {
@@ -340,7 +332,6 @@ class AlignmentRun:
                 metadata_path = config.data_dir / DATASET_METADATA_DIRNAME / DATASET_METADATA_FILENAME,
             )
 
-    # TODO: TypedDict instead
     def create_metadata_dataset_entry(
         self,
         hashtree_path: str | Path | None = None,
@@ -400,12 +391,9 @@ class AlignmentRun:
                 hashtree_path = pipeline_input_hashtree_file,
             )
 
-        # TODO: Write output hashtree
-
         metadata_file.write_text(json.dumps(self.metadata_dict, default=str, indent=2))
         logger.debug("metadata.json written to %s", metadata_file)
 
-        # TODO: Write this at the start of the pipeline run like before? In constructor?
         config_file_copy.write_text(self.config_path.read_text())
         logger.debug("config file copied to to %s", config_file_copy)
 
