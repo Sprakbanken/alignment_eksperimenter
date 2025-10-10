@@ -52,7 +52,7 @@ def get_stats_per_doc(
 
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
         logger.debug("Calculating stats for website %s", website)
-        website_df = jsonl_files_to_df(data_dir, df_["file_name"])
+        website_df = jsonl_files_to_df(df_["file_paths"])
         data_cols = ["fulltext", "fulltext_joined"]
 
         # Group the columns to know which ones to process later.
