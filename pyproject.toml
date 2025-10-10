@@ -14,8 +14,7 @@ dependencies = [
     "pandas>=2.3.1",
     "jsonlines>=4.0.0",
     "gitpython==3.1.45",
-    "pyarrow>=21.0.0",
-    "pyarrow-stubs"
+    "pyarrow>=18.1.0,<19.0.0",
 ]
 
 
