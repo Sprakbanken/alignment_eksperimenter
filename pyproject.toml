@@ -32,6 +32,7 @@ align_all = "align_documents.align_all:main"
 [project.optional-dependencies]
 annotation = [
     "label-studio>=1.21.0",
+    "scikit-learn>=1.7.0",
 ]
 
 [build-system]
