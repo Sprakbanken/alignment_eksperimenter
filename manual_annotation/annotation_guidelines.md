@@ -15,7 +15,7 @@ The sentences must be mostly in the same order.
  
 ### Almost parallel 
 Minor details differ between the pairs, for instance: 
-- 1 sentence missing/added
+- 1 or a few sentences missing from one document (max number of sentences before it should be 'Not parallel' instead is relative to document length)
 - sentence order is jumbled, but mostly contain the same information 
 - a few numbers or dates differ, but the rest of the text is the same 
 
