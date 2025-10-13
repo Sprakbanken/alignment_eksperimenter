@@ -31,7 +31,7 @@ def get_args():
         "--both_langs",
         help=(
             "Copy only files that exist for both languages listed in"
-            " alignment_config.toml, based on filename. Both languages will be"
+            f" {CONFIG_PATH}, based on filename. Both languages will be"
             " copied, and will count as *one* file when passing '-n'."
         ),
         action="store_true"
