@@ -24,13 +24,19 @@ def get_file_info(data_dir: Path) -> pd.DataFrame:
 
 
 def get_websites_with_both_langs(
-    df: pd.DataFrame, languages: tuple[str, str]
+    df: pd.DataFrame, languages: tuple[str, str], remove_other_langs: bool = True
 ) -> pd.DataFrame:
-    """Return a DataFrame containing only rows with websites that has files in both the specified languages."""
+    """
+    Return a DataFrame containing only rows with websites that has files in both the specified languages.
+    - NOTE: Removes languages not in `languages`, by default.
+    """
     lang1, lang2 = languages
-    return df.groupby("website").filter(
+    df = df.groupby("website").filter(
         lambda df: lang1 in df.language.unique() and lang2 in df.language.unique()
-    )[df.language.isin(languages)]
+    )
+    if remove_other_langs:
+        return df[df.language.isin(languages)]
+    return df
 
 
 def jsonl_files_to_df(filepaths: Iterable[str | Path]) -> pd.DataFrame:
