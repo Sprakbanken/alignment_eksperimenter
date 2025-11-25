@@ -20,16 +20,17 @@ def main(args):
     logger.info("Starting process")
 
     pos_domains = defaultdict(set)
-    for aligned_docs_file in args.positive_pairs.glob("*.jsonl"):
+    for aligned_docs_file in args.positive_pairs_dir.glob("*.jsonl"):
         domain, lang1, lang2 = aligned_docs_file.stem.rsplit("_", maxsplit=2)
         lang1, lang2 = sorted([lang1, lang2])
         pos_domains[f"{lang1}_{lang2}"].add(domain)
 
     logger.info("Aligned docs language pairs %s", pos_domains.keys())
     logger.debug("Full aligned doc pairs dict %s", pos_domains)
+    exit(0)
 
     neg_domains = defaultdict(set)
-    for unaligned_docs_file in args.negative_pairs.glob("*.jsonl"):
+    for unaligned_docs_file in args.negative_pairs_dir.glob("*.jsonl"):
         domain, lang1, lang2 = unaligned_docs_file.stem.rsplit("_", maxsplit=2)
         lang1, lang2 = sorted([lang1, lang2])
         neg_domains[f"{lang1}_{lang2}"].add(domain)
@@ -38,7 +39,7 @@ def main(args):
     logger.debug("Full unaligned doc pairs dict %s", neg_domains)
 
     pos_domains, neg_domains = find_overlapping_domains(
-        pos_domains, neg_domains, target_domains=20
+        pos_domains, neg_domains, target_domains=args.num_target_domains
     )
     logger.debug("Selected pos domains: %s", pos_domains)
     logger.debug("Selected neg domains: %s", neg_domains)
@@ -53,13 +54,17 @@ def main(args):
         for lang_pair, domain_set in sorted(pos_domains.items()):
             for domain in sorted(domain_set):
                 first_line = get_first_line_dict(
-                    input_dir=args.positive_pairs, lang_pair=lang_pair, domain=domain
+                    input_dir=args.positive_pairs_dir,
+                    lang_pair=lang_pair,
+                    domain=domain,
                 )
                 f.write({"assumed_aligned": True, **first_line})
         for lang_pair, domain_set in sorted(neg_domains.items()):
             for domain in sorted(domain_set):
                 first_line = get_first_line_dict(
-                    input_dir=args.negative_pairs, lang_pair=lang_pair, domain=domain
+                    input_dir=args.negative_pairs_dir,
+                    lang_pair=lang_pair,
+                    domain=domain,
                 )
                 f.write({"assumed_aligned": False, **first_line})
 
@@ -81,13 +86,13 @@ def get_args():
     parser = argparse.ArgumentParser(prog="Create balanced dataset")
 
     parser.add_argument(
-        "--positive_pairs",
+        "--positive_pairs_dir",
         help="Path to the directory containing assumed positive doc pairs",
         type=Path,
         default=Path("data/output/maalfrid_2025/aligned"),
     )
     parser.add_argument(
-        "--negative_pairs",
+        "--negative_pairs_dir",
         help="Path to the directory containing assumed negative doc pairs",
         type=Path,
         default=Path("data/output/maalfrid_2025/negative_pairs"),
@@ -97,6 +102,12 @@ def get_args():
         help="Place to store dataset for manual annotation",
         type=Path,
         default=Path("data/output/data_for_manual_annotation"),
+    )
+    parser.add_argument(
+        "--num_target_domains",
+        type=int,
+        help="Number of domains to find document pairs from",
+        default=20,
     )
     parser.add_argument(
         "-l",
@@ -111,7 +122,7 @@ def get_args():
 def find_overlapping_domains(
     pos_domains: dict[str, set[str]],
     neg_domains: dict[str, set[str]],
-    target_domains=20,
+    target_domains: int,
 ) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
     """Find target_domains domains that are present in all language pairs, both assumed positive (aligned) and assumed negative document pairs.
     If not enough domains fullfill those criteria, supplement with domains that are present in both aligned and negative document pairs for each language pair.
@@ -196,6 +207,8 @@ def find_overlapping_domains(
 
 
 def get_first_line_dict(input_dir: Path, lang_pair: str, domain: str) -> dict[str, str]:
+    """Read the first line of a document pair json file from input_dir"""
+
     columns_to_keep = [
         "doc_hash",
         "lang",
@@ -209,11 +222,13 @@ def get_first_line_dict(input_dir: Path, lang_pair: str, domain: str) -> dict[st
     lang_1, lang_2 = sorted(lang_pair.split("_"))
 
     filename = input_dir / f"{domain}_{lang_1}_{lang_2}.jsonl"
+    # Language pair order is not consequently sorted
     if not filename.exists():
-        filename = args.positive_pairs / f"{domain}_{lang_2}_{lang_1}.jsonl"
+        filename = args.positive_pairs_dir / f"{domain}_{lang_2}_{lang_1}.jsonl"
 
     first_line = jsonlines.open(filename).read()
-    # logger.debug("%s first line: %s", filename, first_line)
+    logger.debug("%s first line: %s", filename, first_line)
+
     return {
         **{
             f"{column}_lang_1": first_line[f"{column}_{lang_1}"]
