@@ -105,7 +105,7 @@ def main(args):
     # shuffle df (so every annotator gets a variety of languages and pos/neg document pairs)
     df = df.sample(frac=1, random_state=42)
 
-    # split data to annotate into  parts
+    # split data to annotate into args.num_outfiles parts
     num_lines_per_file = len(df) // args.num_outfiles
     logger.debug("Length of each file: %s", num_lines_per_file)
     for i in range(args.num_outfiles):
@@ -270,7 +270,7 @@ def get_line(
     ]
 
     filename = input_dir / f"{domain}_{lang_1}_{lang_2}.jsonl"
-    # Language pair order is not consequently sorted
+    # Language pair order is not consistently sorted
     if not filename.exists():
         filename = input_dir / f"{domain}_{lang_2}_{lang_1}.jsonl"
 
