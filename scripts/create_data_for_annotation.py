@@ -17,8 +17,9 @@ def main(args):
         log_dir=args.output_dir,
     )
 
-    logger.info("Starting process")
-
+    logger.info(
+        "Finding all domains with aligned document pairs for each language pair "
+    )
     pos_domains = defaultdict(set)
     for aligned_docs_file in args.positive_pairs_dir.glob("*.jsonl"):
         domain, lang1, lang2 = aligned_docs_file.stem.rsplit("_", maxsplit=2)
@@ -28,6 +29,9 @@ def main(args):
     logger.info("Aligned docs language pairs %s", pos_domains.keys())
     logger.debug("Full aligned doc pairs dict %s", pos_domains)
 
+    logger.info(
+        "Finding all domains with unaligned document pairs for each language pair "
+    )
     neg_domains = defaultdict(set)
     for unaligned_docs_file in args.negative_pairs_dir.glob("*.jsonl"):
         domain, lang1, lang2 = unaligned_docs_file.stem.rsplit("_", maxsplit=2)
@@ -93,16 +97,21 @@ def main(args):
 
                 f.write({"assumed_aligned": False, **line})
 
-    logger.info("Split file into three files for annotation and save as csv")
+    logger.info(
+        "Split file into %s files for annotation and save as .csv files",
+        args.num_outfiles,
+    )
     df = pd.read_json(outfile, lines=True).drop(columns=["assumed_aligned"])
     # shuffle df (so every annotator gets a variety of languages and pos/neg document pairs)
     df = df.sample(frac=1, random_state=42)
 
-    # split data to annotate into three parts
-    third_len = len(df) // 3
-    logger.debug("third_len: %s", third_len)
-    for i in range(3):
-        sub_df = df[i * third_len : i * third_len + third_len]
+    # split data to annotate into  parts
+    num_lines_per_file = len(df) // args.num_outfiles
+    logger.debug("Length of each file: %s", num_lines_per_file)
+    for i in range(args.num_outfiles):
+        sub_df = df[
+            i * num_lines_per_file : i * num_lines_per_file + num_lines_per_file
+        ]
         sub_df.to_csv(args.output_dir / f"data_to_annotate_part_{i}.csv", index=False)
 
     logger.info("Done. See output at %s", args.output_dir)
@@ -134,6 +143,12 @@ def get_args():
         type=int,
         help="Number of domains to find document pairs from",
         default=20,
+    )
+    parser.add_argument(
+        "--num_outfiles",
+        type=int,
+        default=3,
+        help="Number of .csv-files to split the dataset into for annotation",
     )
     parser.add_argument(
         "--skip_doc_hashes",
