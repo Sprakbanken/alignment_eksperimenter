@@ -50,7 +50,7 @@ def main(args):
     outfile = args.output_dir / "data_to_annotate.jsonl"
     logger.info("Read 1 line from each document pair and write to %s", outfile)
 
-    doc_hashes_to_skip = args.skip_doc_hashes
+    doc_hashes_to_skip = set(args.skip_doc_hashes)
     with jsonlines.open(outfile, "w") as f:
         for lang_pair, domain_set in sorted(pos_domains.items()):
             logger.debug(
@@ -68,8 +68,8 @@ def main(args):
                 if not line:
                     continue
                 # Add doc hashes from chosen document pair to doc_hashes_to_skip, to avoid duplicates in data for annotation
-                doc_hashes_to_skip.append(line["doc_hash_lang_1"])
-                doc_hashes_to_skip.append(line["doc_hash_lang_2"])
+                doc_hashes_to_skip.add(line["doc_hash_lang_1"])
+                doc_hashes_to_skip.add(line["doc_hash_lang_2"])
 
                 f.write({"assumed_aligned": True, **line})
 
@@ -92,8 +92,8 @@ def main(args):
                     continue
 
                 # Add doc hashes from chosen document pair to doc_hashes_to_skip, to avoid duplicates in data for annotation
-                doc_hashes_to_skip.append(line["doc_hash_lang_1"])
-                doc_hashes_to_skip.append(line["doc_hash_lang_2"])
+                doc_hashes_to_skip.add(line["doc_hash_lang_1"])
+                doc_hashes_to_skip.add(line["doc_hash_lang_2"])
 
                 f.write({"assumed_aligned": False, **line})
 
@@ -254,7 +254,7 @@ def find_overlapping_domains(
 
 
 def get_line(
-    input_dir: Path, lang_1: str, lang_2: str, domain: str, skip_doc_hashes: list[str]
+    input_dir: Path, lang_1: str, lang_2: str, domain: str, skip_doc_hashes: set[str]
 ) -> dict[str, str]:
     """Get a line of a document pair json file from input_dir, skipping lines where any document doc hash is in skip_doc_hashes"""
 
