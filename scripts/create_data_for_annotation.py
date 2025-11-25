@@ -27,7 +27,6 @@ def main(args):
 
     logger.info("Aligned docs language pairs %s", pos_domains.keys())
     logger.debug("Full aligned doc pairs dict %s", pos_domains)
-    exit(0)
 
     neg_domains = defaultdict(set)
     for unaligned_docs_file in args.negative_pairs_dir.glob("*.jsonl"):
@@ -45,36 +44,63 @@ def main(args):
     logger.debug("Selected neg domains: %s", neg_domains)
 
     outfile = args.output_dir / "data_to_annotate.jsonl"
+    logger.info("Read 1 line from each document pair and write to %s", outfile)
 
-    logger.info(
-        "Write the first item of every positive/negative document pair files for each domain and language pair to %s",
-        outfile,
-    )
+    doc_hashes_to_skip = args.skip_doc_hashes
     with jsonlines.open(outfile, "w") as f:
         for lang_pair, domain_set in sorted(pos_domains.items()):
+            logger.debug(
+                "Positive pairs: Lang pair: %s, domain set: %s", lang_pair, domain_set
+            )
+            lang_1, lang_2 = lang_pair.split("_")
             for domain in sorted(domain_set):
-                first_line = get_first_line_dict(
+                line = get_line(
                     input_dir=args.positive_pairs_dir,
-                    lang_pair=lang_pair,
+                    lang_1=lang_1,
+                    lang_2=lang_2,
                     domain=domain,
+                    skip_doc_hashes=doc_hashes_to_skip,
                 )
-                f.write({"assumed_aligned": True, **first_line})
+                if not line:
+                    continue
+                # Add doc hashes from chosen document pair to doc_hashes_to_skip, to avoid duplicates in data for annotation
+                doc_hashes_to_skip.append(line["doc_hash_lang_1"])
+                doc_hashes_to_skip.append(line["doc_hash_lang_2"])
+
+                f.write({"assumed_aligned": True, **line})
+
         for lang_pair, domain_set in sorted(neg_domains.items()):
+            logger.debug(
+                "Negative pairs: Lang pair: %s, domain set: %s", lang_pair, domain_set
+            )
+
+            lang_1, lang_2 = lang_pair.split("_")
+
             for domain in sorted(domain_set):
-                first_line = get_first_line_dict(
+                line = get_line(
                     input_dir=args.negative_pairs_dir,
-                    lang_pair=lang_pair,
+                    lang_1=lang_1,
+                    lang_2=lang_2,
                     domain=domain,
+                    skip_doc_hashes=doc_hashes_to_skip,
                 )
-                f.write({"assumed_aligned": False, **first_line})
+                if not line:
+                    continue
+
+                # Add doc hashes from chosen document pair to doc_hashes_to_skip, to avoid duplicates in data for annotation
+                doc_hashes_to_skip.append(line["doc_hash_lang_1"])
+                doc_hashes_to_skip.append(line["doc_hash_lang_2"])
+
+                f.write({"assumed_aligned": False, **line})
 
     logger.info("Split file into three files for annotation and save as csv")
     df = pd.read_json(outfile, lines=True).drop(columns=["assumed_aligned"])
     # shuffle df (so every annotator gets a variety of languages and pos/neg document pairs)
     df = df.sample(frac=1, random_state=42)
 
+    # split data to annotate into three parts
     third_len = len(df) // 3
-    logger.debug(third_len)
+    logger.debug("third_len: %s", third_len)
     for i in range(3):
         sub_df = df[i * third_len : i * third_len + third_len]
         sub_df.to_csv(args.output_dir / f"data_to_annotate_part_{i}.csv", index=False)
@@ -108,6 +134,12 @@ def get_args():
         type=int,
         help="Number of domains to find document pairs from",
         default=20,
+    )
+    parser.add_argument(
+        "--skip_doc_hashes",
+        nargs="+",
+        default=[],
+        help="Doc hashes to skip when creating dataset to annotate",
     )
     parser.add_argument(
         "-l",
@@ -206,8 +238,10 @@ def find_overlapping_domains(
     return (pos_domains, neg_domains)
 
 
-def get_first_line_dict(input_dir: Path, lang_pair: str, domain: str) -> dict[str, str]:
-    """Read the first line of a document pair json file from input_dir"""
+def get_line(
+    input_dir: Path, lang_1: str, lang_2: str, domain: str, skip_doc_hashes: list[str]
+) -> dict[str, str]:
+    """Get a line of a document pair json file from input_dir, skipping lines where any document doc hash is in skip_doc_hashes"""
 
     columns_to_keep = [
         "doc_hash",
@@ -219,26 +253,36 @@ def get_first_line_dict(input_dir: Path, lang_pair: str, domain: str) -> dict[st
         "fulltext",
         "fulltext_joined",
     ]
-    lang_1, lang_2 = sorted(lang_pair.split("_"))
 
     filename = input_dir / f"{domain}_{lang_1}_{lang_2}.jsonl"
     # Language pair order is not consequently sorted
     if not filename.exists():
-        filename = args.positive_pairs_dir / f"{domain}_{lang_2}_{lang_1}.jsonl"
+        filename = input_dir / f"{domain}_{lang_2}_{lang_1}.jsonl"
 
-    first_line = jsonlines.open(filename).read()
-    logger.debug("%s first line: %s", filename, first_line)
+    for line in jsonlines.open(filename):
+        if (
+            line[f"doc_hash_{lang_1}"] in skip_doc_hashes
+            or line[f"doc_hash_{lang_2}"] in skip_doc_hashes
+        ):
+            logger.debug(
+                "Skipping line %s %s",
+                line[f"doc_hash_{lang_1}"],
+                line[f"doc_hash_{lang_2}"],
+            )
+            continue
 
-    return {
-        **{
-            f"{column}_lang_1": first_line[f"{column}_{lang_1}"]
-            for column in columns_to_keep
-        },
-        **{
-            f"{column}_lang_2": first_line[f"{column}_{lang_2}"]
-            for column in columns_to_keep
-        },
-    }
+        return {
+            **{
+                f"{column}_lang_1": line[f"{column}_{lang_1}"]
+                for column in columns_to_keep
+            },
+            **{
+                f"{column}_lang_2": line[f"{column}_{lang_2}"]
+                for column in columns_to_keep
+            },
+        }
+    logger.warning("Couldn't find a line in %s", filename)
+    return {}
 
 
 if __name__ == "__main__":
