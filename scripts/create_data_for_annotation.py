@@ -41,6 +41,10 @@ def main(args):
     logger.info("Unaligned docs language pairs %s", neg_domains.keys())
     logger.debug("Full unaligned doc pairs dict %s", neg_domains)
 
+    if not (neg_domains and pos_domains):
+        logger.warning("Couldn't find both positive and negative domains. Exiting.")
+        exit(1)
+
     pos_domains, neg_domains = find_overlapping_domains(
         pos_domains, neg_domains, target_domains=args.num_target_domains
     )
