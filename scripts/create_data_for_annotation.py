@@ -50,7 +50,11 @@ def main(args):
     outfile = args.output_dir / "data_to_annotate.jsonl"
     logger.info("Read 1 line from each document pair and write to %s", outfile)
 
-    doc_hashes_to_skip = set(args.skip_doc_hashes)
+    doc_hashes_to_skip = set()
+    if args.doc_hashes:
+        logger.info("Reading doc hashes to skip from file")
+        doc_hashes_to_skip = set(args.doc_hashes.read_text().splitlines())
+
     with jsonlines.open(outfile, "w") as f:
         for lang_pair, domain_set in sorted(pos_domains.items()):
             logger.debug(
@@ -151,10 +155,10 @@ def get_args():
         help="Number of .csv-files to split the dataset into for annotation",
     )
     parser.add_argument(
-        "--skip_doc_hashes",
-        nargs="+",
-        default=[],
-        help="Doc hashes to skip when creating dataset to annotate",
+        "--doc_hashes",
+        type=Path,
+        default=None,
+        help="Newline separates file with doc hashes to skip when creating dataset to annotate",
     )
     parser.add_argument(
         "-l",
