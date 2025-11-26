@@ -8,9 +8,11 @@ from align_documents.utils.get_embedding_model import (
     get_embedding_model as get_embedding_model,
 )
 
+def get_time() -> str:
+    return datetime.now().strftime("%Y-%m-%d_%H-%M")
 
 def setup_logging(source_script: str, log_level: str, log_dir: Path = Path("logs")):
-    current_time = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    current_time = get_time()
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # Set up logging

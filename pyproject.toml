@@ -13,13 +13,17 @@ dependencies = [
     "rapidfuzz>=3.13.0",
     "pandas>=2.3.1",
     "jsonlines>=4.0.0",
+    "gitpython==3.1.45",
+    "pyarrow>=18.1.0,<19.0.0",
 ]
 
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.2.0",
+    "pytest>=8.4.2",
     "ruff>=0.12.3",
+    "pandas_stubs>=2.3.1",
 ]
 
 [project.scripts]
