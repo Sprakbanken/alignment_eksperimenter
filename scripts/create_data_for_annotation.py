@@ -172,8 +172,8 @@ def find_overlapping_domains(
     target_domains: int,
 ) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
     """Find target_domains domains that are present in all language pairs, both assumed positive (aligned) and assumed negative document pairs.
-    If not enough domains fullfill those criteria, supplement with domains that are present in both aligned and negative document pairs for each language pair.
-    If not enough domains fullfill those criteria, supplement with domains that are present in either postive or negative document pairs for each language.
+    If not enough domains fulfill those criteria, supplement with domains that are present in both aligned and negative document pairs for each language pair.
+    If not enough domains fulfill those criteria, supplement with domains that are present in either postive or negative document pairs for each language.
     """
 
     overlapping_lang_pairs = set(pos_domains) & set(neg_domains)
