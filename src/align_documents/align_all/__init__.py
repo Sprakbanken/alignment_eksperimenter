@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 from tqdm import tqdm
 from align_documents.utils import setup_logging, get_config, get_embedding_model
+from align_documents.utils.config import CONFIG_PATH
 from align_documents.utils.dataframe import (
     get_file_info,
     get_websites_with_both_langs,
@@ -24,7 +25,7 @@ def get_args():
         "--config_file",
         help="Path to the config file for alignment",
         type=Path,
-        default=Path("alignment_config.toml"),
+        default=Path(CONFIG_PATH),
     )
     parser.add_argument(
         "-l",
@@ -81,9 +82,7 @@ def main():
         logger.debug("Number of files: %s", len(df_))
         logger.debug("Formats: %s", df_.format.unique())
 
-        all_website_docs = jsonl_files_to_df(
-            source_dir=config.data_dir, filenames=df_.file_name
-        )
+        all_website_docs = jsonl_files_to_df(df_.file_path)
         logger.debug("Number of documents: %s", len(all_website_docs))
 
         run_metadata.extend_pipeline_input_docs(all_website_docs)

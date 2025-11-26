@@ -12,7 +12,7 @@ from align_documents.utils.dataframe import (
     get_file_info,
     jsonl_files_to_df,
 )
-from align_documents.utils.config import get_config
+from align_documents.utils.config import get_config, CONFIG_PATH
 from align_documents.utils import setup_logging
 
 logger = getLogger(__name__)
@@ -52,7 +52,7 @@ def get_stats_per_doc(
 
     for website, df_ in tqdm(files_df.groupby("website"), "Calculating stats"):
         logger.debug("Calculating stats for website %s", website)
-        website_df = jsonl_files_to_df(data_dir, df_["file_name"])
+        website_df = jsonl_files_to_df(df_["file_path"])
         data_cols = ["fulltext", "fulltext_joined"]
 
         # Group the columns to know which ones to process later.
@@ -156,25 +156,25 @@ def get_args():
         "--config_file",
         help="Path to the config file for alignment",
         type=Path,
-        default=Path("alignment_config.toml"),
+        default=CONFIG_PATH,
     )
     parser.add_argument(
         "-p",
-        "--print-overview",
+        "--print_overview",
         action="store_true",
         help="Print dataset overview/aggregate stats to console",
     )
 
     parser.add_argument(
         "-P",
-        "--print-full",
+        "--print_full",
         action="store_true",
         help="Print full dataset stats to console",
     )
 
     parser.add_argument(
         "-t",
-        "--use-tokenizer",
+        "--use_tokenizer",
         action="store_true",
         help=(
             "Include tokenizer-dependent stats."
