@@ -31,8 +31,12 @@ info = "align_documents.info:main"
 align_all = "align_documents.align_all:main"
 
 [project.optional-dependencies]
+
 annotation = [
     "label-studio>=1.21.0",
+]
+compare = [
+    "datasets>=4.0.0",
 ]
 
 [build-system]
