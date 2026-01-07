@@ -2,56 +2,24 @@ import argparse
 import logging
 import re
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-
+from typing import Callable
 import pandas as pd
-from rapidfuzz import fuzz
+import numpy as np
+from rapidfuzz import fuzz, process
 
 from align_documents.utils.config import get_config
-from align_documents.utils.logging import setup_logging
+from align_documents.utils import setup_logging
 
 logger = logging.getLogger(__name__)
-
-
-def extract_language_code(url, lang_code_regex):
-    match = lang_code_regex.search(url)
-    return match.group(1) if match else None
 
 
 def normalize_url(url):
     return re.sub(r"/[a-z]{2}-[A-Z]{2}/", "/xx-XX/", url)
 
 
-def is_valid_url_pair(url1, url2, lang_code_regex, threshold=97):
-    return fuzz.ratio(normalize_url(url1), normalize_url(url2)) >= threshold
-
-
 def ends_with_digit(string):
     match = re.search(r"(\d+)(?=\.$)", string)
     return bool(match) if match else False
-
-
-def match_rows(
-    lang_code_1_row, lang_code_2_rows, lang_code_1, lang_code_2, lang_code_regex
-):
-    matches = []
-    lang_code_1_url = getattr(lang_code_1_row, "url")
-
-    for lang_code_2_row in lang_code_2_rows:
-        lang_code_2_url = getattr(lang_code_2_row, "url")
-        if is_valid_url_pair(lang_code_2_url, lang_code_1_url, lang_code_regex):
-            matches.append(
-                {
-                    f"{lang_code_1}_doc_hash": getattr(lang_code_1_row, "doc_hash"),
-                    f"{lang_code_2}_doc_hash": getattr(lang_code_2_row, "doc_hash"),
-                    f"{lang_code_1}_url": getattr(lang_code_1_row, "url"),
-                    f"{lang_code_2}_url": getattr(lang_code_2_row, "url"),
-                    f"{lang_code_1}_fulltext": getattr(lang_code_1_row, "fulltext"),
-                    f"{lang_code_2}_fulltext": getattr(lang_code_2_row, "fulltext"),
-                }
-            )
-    return matches
 
 
 def contains_dates_or_many_numbers(url):
@@ -63,6 +31,38 @@ def contains_dates_or_many_numbers(url):
             re.search(r"/[^/]*\d+/?$", url)
         )  # match just a digit at the end (e.g 06)
     )
+
+
+def compare_urls(
+    df_lang_code_1: pd.DataFrame,
+    df_lang_code_2: pd.DataFrame,
+    scorer: Callable[..., float] = fuzz.ratio,
+    score_cutoff: float = 97
+) -> pd.DataFrame:
+    all_matches = []
+
+    urls_normalized_1 = df_lang_code_1['url'].apply(normalize_url)
+    urls_normalized_2 = df_lang_code_2['url'].apply(normalize_url)
+
+    scores = process.cdist(
+        urls_normalized_1,
+        urls_normalized_2,
+        scorer=scorer,
+        score_cutoff=score_cutoff
+    )
+    indices = np.where(np.triu(scores, k=1))
+
+    for res_1, res_2 in zip(*indices):
+        all_matches.append({
+            f"{lang_code_1}_doc_hash": df_lang_code_1['doc_hash'].iloc[res_1],
+            f"{lang_code_2}_doc_hash": df_lang_code_2['doc_hash'].iloc[res_2],
+            f"{lang_code_1}_url": df_lang_code_1['url'].iloc[res_1],
+            f"{lang_code_2}_url": df_lang_code_2['url'].iloc[res_2],
+            f"{lang_code_1}_fulltext": df_lang_code_1['fulltext'].iloc[res_1],
+            f"{lang_code_2}_fulltext": df_lang_code_2['fulltext'].iloc[res_2],
+        })
+
+    return pd.DataFrame(all_matches)
 
 
 if __name__ == "__main__":
@@ -81,91 +81,63 @@ if __name__ == "__main__":
     setup_logging("make_pairs_based_on_url", args.log_level)
     config = get_config(config_file=args.config_file)
 
-    source_p: Path = config.get("data_dir")
+    source_p = config.data_dir
+    lang_code_1 = config.languages[0]
+    lang_code_2 = config.languages[1]
+    output_dir = config.output_dir / "url_pairs"
 
-    languages: list[str] = config.get("languages")
-
-    lang_code_1: str = languages[0]
-    lang_code_2: str = languages[1]
-
-    output_dir: Path = config.get("output_dir")
-    output_dir = output_dir / "url_pairs"
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    file_group_regex = re.compile(rf"(.*?)(?:_{lang_code_1}|_{lang_code_2})")
+    file_group_regex = re.compile(rf"(?P<domain>.*?)_(?P<lang_code>{lang_code_1}|{lang_code_2})")
 
-    lang_code_regex = re.compile(r"/([a-z]{2}-[A-Z]{2})/")
+    logger.info("Collecting files with languages: %s, %s.", lang_code_1, lang_code_2)
 
-    domain_groups = defaultdict(list)
+    domain_groups = defaultdict(dict)
     for file in source_p.iterdir():
-        match = file_group_regex.match(file.stem)
-        if match:
-            domain_groups[match.group(1)].append(file)
+        if match := file_group_regex.match(file.stem):
+            domain = match.group('domain')
+            lang_code = match.group('lang_code')
+            domain_groups[domain][lang_code] = file
         else:
-            logger.warning(
+            logger.debug(
                 f"File {file.name} does not match expected pattern and will be skipped."
             )
 
-    grouped_files = [
-        (domain, tuple(files))
-        for domain, files in domain_groups.items()
-        if len(files) > 1
-    ]
-    logger.info(f"Grouped domains: {len(grouped_files)}")
+    logger.debug("Filtering out languages not containing both langs")
 
-    # process each domain
-    for domain, files in grouped_files:
-        logger.info(f"Processing domain: {domain}")
-        df_lang_code_1 = pd.DataFrame()
-        df_lang_code_2 = pd.DataFrame()
+    domain_groups_filtered = {
+        domain: langs
+        for domain, langs in domain_groups.items()
+        if set([lang_code_1, lang_code_2]).issubset(langs.keys())
+    }
 
-        for file in files:
-            if lang_code_1 in file.name:
-                df_lang_code_1 = pd.read_json(file, lines=True)
-                df_lang_code_1 = df_lang_code_1[
-                    ~df_lang_code_1["url"].apply(contains_dates_or_many_numbers)
-                ]
-            elif lang_code_2 in file.name:
-                df_lang_code_2 = pd.read_json(file, lines=True)
-                df_lang_code_2 = df_lang_code_2[
-                    ~df_lang_code_2["url"].apply(contains_dates_or_many_numbers)
-                ]
+    # TODO: Collected files: ...
+    logger.info(f"Collected domains: {len(domain_groups_filtered)}")
 
-        df_lang_code_2_rows = list(df_lang_code_2.itertuples())
-        all_matches = []
+    logger.info(f"Processing domains...")
 
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(
-                lambda row: match_rows(
-                    row, df_lang_code_2_rows, lang_code_1, lang_code_2, lang_code_regex
-                ),
-                df_lang_code_1.itertuples(),
-            )
-            for matched_rows in results:
-                all_matches.extend(matched_rows)
+    for domain, langs in domain_groups_filtered.items():
+        logger.debug(f"Processing domain: {domain}")
 
-        result_df = pd.DataFrame(all_matches)
-        logger.info(f"Matches found for {domain}: {len(result_df)}")
+        df_lang_code_1 = pd.read_json(langs[lang_code_1], lines=True)
+        df_lang_code_1 = df_lang_code_1[~df_lang_code_1['url'].apply(contains_dates_or_many_numbers)]
+
+        df_lang_code_2 = pd.read_json(langs[lang_code_2], lines=True)
+        df_lang_code_2 = df_lang_code_2[~df_lang_code_2['url'].apply(contains_dates_or_many_numbers)]
+
+        result_df = compare_urls(df_lang_code_1, df_lang_code_2, scorer=fuzz.ratio, score_cutoff=97)
+
+        logger.debug(f"Matches found for {domain} before filtering: {len(result_df)}")
 
         if len(result_df) > 0:
             result_df_filtered = result_df[
                 ~result_df[f"{lang_code_1}_url"].apply(ends_with_digit)
                 & ~result_df[f"{lang_code_2}_url"].apply(ends_with_digit)
             ]
-        else:
-            result_df_filtered = pd.DataFrame()
+            if len(result_df_filtered) > 0:
+                logger.info( f"Saving {len(result_df_filtered)} valid matches for {domain}.")
+                result_df_filtered.to_csv( output_dir / f"{domain}.csv", index=False)
+                continue
 
-        (output_dir / f"{lang_code_1}_{lang_code_2}").mkdir(exist_ok=True, parents=True)
+        logger.debug( f"No valid matches found for {domain} after filtering. Skipping file.")
 
-        if len(result_df_filtered) > 0:
-            logger.info(
-                f"Writing {len(result_df_filtered)} valid matches for {domain} to file."
-            )
-            result_df_filtered.to_csv(
-                output_dir / f"{lang_code_1}_{lang_code_2}" / f"{domain}.csv",
-                index=False,
-            )
-        else:
-            logger.warning(
-                f"No valid matches found for {domain} after filtering. Skipping file."
-            )

@@ -60,12 +60,27 @@ def get_document_embeddings(
     if filename.exists():
         logger.debug("Loading embeddings from %s", filename)
         embeddings = torch.load(filename)
-    else:
-        logger.debug("Creating embeddings for %s", filename)
-        embeddings = create_document_embeddings(
-            embedding_model, documents, aggregation_strategy, batch_size
-        )
-        torch.save(embeddings, f=filename)
+
+        # Crude check for compatible file version.
+        #    TODO:
+        #      Use hashes from hashtree for embedding filenames,
+        #      then verify against hashes
+        #          domain->lang->doc_hash: use lang hash
+        #          lang->domain->doc_hash: use domain hash
+        #          # TODO: Make hashes independent of tree structure?
+        if len(embeddings) == len(documents):
+            return embeddings
+        else:
+            logger.debug(
+                "Number of existing embeddings differ from number of documents for %s. Regenerating...",
+                filename_identifier,
+            )
+
+    logger.debug("Creating embeddings for %s", filename)
+    embeddings = create_document_embeddings(
+        embedding_model, documents, aggregation_strategy, batch_size
+    )
+    torch.save(embeddings, f=filename)
 
     return embeddings
 

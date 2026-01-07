@@ -1,19 +1,18 @@
-from align_documents.utils import setup_logging, get_config, get_embedding_model
-from align_documents.utils.dataframe import (
-    jsonl_files_to_df,
-    get_websites_with_both_langs,
-    get_file_info,
-    get_lang1_lang2_dataframes,
-)
-from align_documents.align import get_document_embeddings
-from align_documents.types import AggregationStrategy
-
-from pathlib import Path
 import logging
 from argparse import ArgumentParser
-import pandas as pd
-from sentence_transformers import util
+from pathlib import Path
 
+import pandas as pd
+from align_documents.align import get_document_embeddings
+from align_documents.types import AggregationStrategy
+from align_documents.utils import get_config, get_embedding_model, setup_logging
+from align_documents.utils.dataframe import (
+    get_file_info,
+    get_lang1_lang2_dataframes,
+    get_websites_with_both_langs,
+    jsonl_files_to_df,
+)
+from sentence_transformers import util
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -112,7 +111,7 @@ if __name__ == "__main__":
         default=100,
     )
     args = parser.parse_args()
-    setup_logging("find_negative_doc_pairs", args.log_level)
+    setup_logging("find negative doc pairs", args.log_level)
 
     config = get_config(args.config_file)
     logger.info(
