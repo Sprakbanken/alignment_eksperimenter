@@ -86,6 +86,6 @@ uv run scripts/find_negative_documents.py --config_file alignment_config.toml --
 
 ## Pre-commit
 
-Run `pre-commit install` (or `python -m pre-commit install`) to set up pre-commit first time.
+Run `uv run pre-commit install` (or `python -m pre-commit install`) to set up pre-commit first time.
 Then, the pre-commit hooks will run each time you create a commit.
 
