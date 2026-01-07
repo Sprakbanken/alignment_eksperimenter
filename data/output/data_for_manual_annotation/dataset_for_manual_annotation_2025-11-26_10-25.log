@@ -1,0 +1,43 @@
+2025-11-26 10:25:36,530 - INFO - Finding all domains with aligned document pairs for each language pair 
+2025-11-26 10:25:36,532 - INFO - Aligned docs language pairs dict_keys(['nno_nob', 'eng_nob', 'eng_nno'])
+2025-11-26 10:25:36,532 - INFO - Finding all domains with unaligned document pairs for each language pair 
+2025-11-26 10:25:36,534 - INFO - Unaligned docs language pairs dict_keys(['eng_nob', 'eng_nno', 'nno_nob'])
+2025-11-26 10:25:36,534 - INFO - Not enough overlapping domains. Found 27 domains that overlap across all assumed positive and assumed negative document pairs.
+2025-11-26 10:25:36,535 - INFO - Could not find enough overlapping domains between positive and negative alignment for eng_nob
+2025-11-26 10:25:36,535 - WARNING - Not enough domains in eng_nob aligned documents
+2025-11-26 10:25:36,535 - INFO - Read 1 line from each document pair and write to data/output/data_for_manual_annotation/data_to_annotate.jsonl
+2025-11-26 10:25:36,535 - INFO - Reading doc hashes to skip from file
+2025-11-26 10:25:36,536 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/fhi.no_nno_eng.jsonl
+2025-11-26 10:25:36,537 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/filmskolen.no_nno_eng.jsonl
+2025-11-26 10:25:36,559 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/konkurransetilsynet.no_nno_eng.jsonl
+2025-11-26 10:25:36,581 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/nih.no_nno_eng.jsonl
+2025-11-26 10:25:36,610 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/helsenorge.no_nob_eng.jsonl
+2025-11-26 10:25:36,636 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/politiet.no_nob_eng.jsonl
+2025-11-26 10:25:36,655 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/konkurransetilsynet.no_nob_nno.jsonl
+2025-11-26 10:25:36,656 - WARNING - Couldn't find a line in data/output/maalfrid_2025/aligned/nmbu.no_nob_nno.jsonl
+2025-11-26 10:25:36,659 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/digitalarkivet.no_eng_nno.jsonl
+2025-11-26 10:25:36,660 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/fhi.no_eng_nno.jsonl
+2025-11-26 10:25:36,661 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/filmskolen.no_eng_nno.jsonl
+2025-11-26 10:25:36,661 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/helsenorge.no_eng_nno.jsonl
+2025-11-26 10:25:36,661 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/hi.no_eng_nno.jsonl
+2025-11-26 10:25:36,661 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/hivolda.no_eng_nno.jsonl
+2025-11-26 10:25:36,662 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/hvl.no_eng_nno.jsonl
+2025-11-26 10:25:36,662 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/inn.no_eng_nno.jsonl
+2025-11-26 10:25:36,662 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/khio.no_eng_nno.jsonl
+2025-11-26 10:25:36,662 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/klagenemndssekretariatet.no_eng_nno.jsonl
+2025-11-26 10:25:36,662 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/konkurransetilsynet.no_eng_nno.jsonl
+2025-11-26 10:25:36,663 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/nb.no_eng_nno.jsonl
+2025-11-26 10:25:36,663 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/nhh.no_eng_nno.jsonl
+2025-11-26 10:25:36,663 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/nih.no_eng_nno.jsonl
+2025-11-26 10:25:36,663 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/nmbu.no_eng_nno.jsonl
+2025-11-26 10:25:36,664 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/nmh.no_eng_nno.jsonl
+2025-11-26 10:25:36,664 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/ntnu.no_eng_nno.jsonl
+2025-11-26 10:25:36,664 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/nupi.no_eng_nno.jsonl
+2025-11-26 10:25:36,664 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/oslomet.no_eng_nno.jsonl
+2025-11-26 10:25:36,664 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/politiet.no_eng_nno.jsonl
+2025-11-26 10:25:36,678 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/digitalarkivet.no_nob_eng.jsonl
+2025-11-26 10:25:36,682 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/helsenorge.no_nob_eng.jsonl
+2025-11-26 10:25:36,761 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/ssb.no_nob_nno.jsonl
+2025-11-26 10:25:36,761 - WARNING - Couldn't find a line in data/output/maalfrid_2025/negative_pairs/uio.no_nob_nno.jsonl
+2025-11-26 10:25:36,762 - INFO - Split file into 3 files for annotation and save as .csv files
+2025-11-26 10:25:37,130 - INFO - Done. See output at data/output/data_for_manual_annotation
