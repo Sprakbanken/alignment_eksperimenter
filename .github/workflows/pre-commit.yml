@@ -16,7 +16,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.11'
+          version: '3.11'
 
       - name: Run pre-commit
         env:
