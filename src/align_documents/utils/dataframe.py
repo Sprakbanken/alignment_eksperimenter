@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import logging
 from functools import partial
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 import regex as re
 
 
@@ -10,8 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_file_info(data_dir: Path) -> pd.DataFrame:
-    info = sorted([e.name[:-6].split("_") + [e.name] for e in data_dir.glob("*.jsonl")])
-    df = pd.DataFrame(info, columns=["website", "language", "format", "file_name"])
+    info = sorted(
+        [e.name[:-6].split("_") + [e.name, e] for e in data_dir.glob("*.jsonl")]
+    )
+    df = pd.DataFrame(
+        info, columns=["website", "language", "format", "file_name", "file_path"]
+    )
     logger.info("Found %s files in %s", len(df), data_dir)
     logger.info("Number of unique websites: %s", len(df.website.unique()))
     logger.info("Unique languages:          %s", df.language.unique())
@@ -20,30 +24,33 @@ def get_file_info(data_dir: Path) -> pd.DataFrame:
 
 
 def get_websites_with_both_langs(
-    df: pd.DataFrame, languages: tuple[str, str]
+    df: pd.DataFrame, languages: tuple[str, str], remove_other_langs: bool = True
 ) -> pd.DataFrame:
-    """Return a DataFrame containing only rows with websites that has files in both the specified languages."""
+    """
+    Return a DataFrame containing only rows with websites that has files in both the specified languages.
+    - NOTE: Removes languages not in `languages`, by default.
+    """
     lang1, lang2 = languages
-    return df.groupby("website").filter(
+    df = df.groupby("website").filter(
         lambda df: lang1 in df.language.unique() and lang2 in df.language.unique()
     )
+    if remove_other_langs:
+        return df[df.language.isin(languages)]
+    return df
 
 
-def jsonl_files_to_df(source_dir: Path, filenames: pd.Series) -> pd.DataFrame:
+def jsonl_files_to_df(filepaths: Iterable[str | Path]) -> pd.DataFrame:
     dfs = []
-    for e in filenames:
-        e = source_dir / e
-        logger.debug(e)
-        dfs.append(pd.read_json(e, lines=True))
-    logger.debug("Read all files from filenames")
+    for path in filepaths:
+        logger.debug("Reading into dataframe: %s", path)
+        dfs.append(pd.read_json(path, lines=True))
+    logger.debug("Finished reading jsonl files into dataframes")
     df = pd.concat(dfs).reset_index(drop=True)
     df["fulltext_joined"] = df.fulltext.apply(lambda x: "\n".join(x))
     return df
 
 
-def has_bad_quality(
-    doc_text: str, min_len: int | None, number_to_letter_ratio: float
-) -> bool:
+def has_bad_quality(doc_text: str, min_len: int, number_to_letter_ratio: float) -> bool:
     if min_len and len(doc_text) < min_len:
         return True
     num_nums = len(re.findall(r"\d", doc_text))
@@ -71,7 +78,7 @@ def deduplicate_and_filter_on_quality(
 def get_lang1_lang2_dataframes(
     df: pd.DataFrame,
     languages: tuple[str, str],
-    min_doc_len: int | None,
+    min_doc_len: int,
     number_to_letter_ratio: float,
 ) -> tuple[str, pd.DataFrame, str, pd.DataFrame]:
     """Split dataframe into"""

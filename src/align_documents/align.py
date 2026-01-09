@@ -73,7 +73,7 @@ def get_document_embeddings(
         else:
             logger.debug(
                 "Number of existing embeddings differ from number of documents for %s. Regenerating...",
-                filename_identifier
+                filename_identifier,
             )
 
     logger.debug("Creating embeddings for %s", filename)
@@ -90,7 +90,7 @@ def align(
     lang2_documents: Iterable[str],
     lang1_filename_identifier: str,
     lang2_filename_identifier: str,
-    embedding_dir: Path | None,
+    embedding_dir: Path,
     embedding_model: SentenceTransformer,
     match_threshold: float,
     aggregation_strategy: AggregationStrategy,
@@ -132,13 +132,13 @@ def align(
 def filter_and_align(
     df: pd.DataFrame,
     website_name: str,
-    embedding_dir: Path | None,
+    embedding_dir: Path,
     embedding_model: SentenceTransformer,
     match_threshold: float,
     aggregation_strategy: AggregationStrategy,
     batch_size: int,
     languages: tuple[str, str],
-    min_doc_len: int | None,
+    min_doc_len: int,
     number_to_letter_ratio: float,
 ) -> pd.DataFrame:
     """Align documents using sentence embeddings.

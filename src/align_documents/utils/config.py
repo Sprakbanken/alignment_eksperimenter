@@ -9,6 +9,8 @@ from typing import Self
 
 logger = logging.getLogger(__name__)
 
+CONFIG_PATH = Path("alignment_config.toml")
+
 
 @dataclass
 class Config:
@@ -43,7 +45,7 @@ class Config:
         return config
 
 
-def get_config(config_file: Path) -> Config:
+def get_config(config_file: Path = CONFIG_PATH) -> Config:
     with open(config_file, "rb") as f:
         config = tomllib.load(f)
     return Config.from_dict(config)
