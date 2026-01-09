@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 CONFIG_PATH = Path("alignment_config.toml")
 
+
 @dataclass
 class Config:
     data_dir: Path

@@ -60,15 +60,15 @@ Etter å ha kjørt kommandoen label-studio start blir dere tatt med til startsid
 ```
 
 ### Annotering
-Selve annoteringen er selvforklarende, husk å lese [annotation_guidelines.md](annotation_guidelines.md)
-Begge to: _0
-Thea: _1
-Tita: _2
+Selve annoteringen er selvforklarende, husk å lese [annotation_guidelines.md](annotation_guidelines.md)  
+Begge to: _0  
+Thea: _1  
+Tita: _2  
 
 
-### Lagre data
-For å lagre annoteringene, trykk på "Export" og velg .csv
-Navngi filen på samme måte som filen du annoterte, og putt den i [manual_annotation/annotated_data](manual_annotation/annotated_data)
-Add, commit og push til din branch! 
+### Lagre data 
+For å lagre annoteringene, trykk på "Export" og velg .csv  
+Navngi filen på samme måte som filen du annoterte, og putt den i [manual_annotation/annotated_data](manual_annotation/annotated_data)  
+Add, commit og push til din branch!  
 
 
