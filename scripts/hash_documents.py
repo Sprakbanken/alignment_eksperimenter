@@ -9,7 +9,7 @@ import pandas as pd
 
 def compute_doc_hash(fulltext) -> str:
     """
-    Compute SHA-256 over the newline-joined fulltext.
+    Compute hash over the newline-joined fulltext.
     """
     if isinstance(fulltext, list):
         text = "\n".join(fulltext)
@@ -25,7 +25,7 @@ def add_hash_column(
     df: pd.DataFrame, column_name: str = "fulltext", hash_column_name: str = "doc_hash"
 ) -> pd.DataFrame:
     """
-    Adds/overwrites a SHA-256 hash column based on the `fulltext` column.
+    Adds a hash column based on the `fulltext` column.
     """
     df[hash_column_name] = df[column_name].apply(compute_doc_hash)
     return df
@@ -57,7 +57,7 @@ def process_files(input_paths: list[str], output_dir: str | None) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Add SHA-256 doc_hash based on fulltext for JSONL files."
+        description="doc_hash based on fulltext for JSONL files."
     )
     parser.add_argument(
         "--input_paths",
