@@ -107,7 +107,6 @@ name = "align-documents"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
-    { name = "datasets" },
     { name = "gitpython" },
     { name = "jsonlines" },
     { name = "pandas" },
@@ -137,7 +136,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "datasets", specifier = ">=4.0.0" },
     { name = "datasets", marker = "extra == 'compare'", specifier = ">=4.0.0" },
     { name = "gitpython", specifier = "==3.1.45" },
     { name = "jsonlines", specifier = ">=4.0.0" },
