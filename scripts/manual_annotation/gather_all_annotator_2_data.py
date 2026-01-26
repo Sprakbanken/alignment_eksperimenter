@@ -4,7 +4,7 @@ from gather_all_annotator_1_data import remove_duplicate_annotations
 
 if __name__ == "__main__":
     p1 = Path("manual_annotation/annotated_data/annotator_2/annotator_2_pre.csv")
-    p2 = Path("manual_annotation/annotated_data/annotator_2/annotator_2.csv")
+    p2 = Path("manual_annotation/annotated_data/annotator_2/annotator_2_post.csv")
 
     outfile = Path("manual_annotation/annotated_data/annotator_2.csv")
 
