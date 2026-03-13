@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     assert set(df1.columns) == set(df2.columns) == set(df3.columns) == set(df4.columns)
 
-    csv_df = pd.read_csv("manual_annotation/annotated_data/annotator_2.csv")
+    csv_df = pd.read_csv("manual_annotation/annotated_data/annotator_2/annotator_2.csv")
 
     csv_cols = set(csv_df.columns)
     json_cols = set(df1.columns)

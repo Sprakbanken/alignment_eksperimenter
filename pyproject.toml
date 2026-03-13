@@ -34,6 +34,7 @@ align_all = "align_documents.align_all:main"
 
 annotation = [
     "label-studio>=1.21.0",
+    "scikit-learn>=1.7.0",
 ]
 compare = [
     "datasets>=4.0.0",
