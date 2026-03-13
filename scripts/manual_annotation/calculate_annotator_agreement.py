@@ -72,7 +72,6 @@ def main():
     df2 = df2[df2.doc_hash.isin(overlapping_doc_hashes)]
     logger.debug("len(df2) %s", len(df2))
 
-    ## TODO: sørg for at df1 og df2 har lik rekkefølge.
     df1 = df1.sort_values(by="doc_hash")
     df1 = df1.set_index("doc_hash")
 
