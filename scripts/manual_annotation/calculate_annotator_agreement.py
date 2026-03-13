@@ -72,9 +72,17 @@ def main():
     df2 = df2[df2.doc_hash.isin(overlapping_doc_hashes)]
     logger.debug("len(df2) %s", len(df2))
 
-    score = cohen_kappa_score(
-        y1=sorted(df1.annotation), y2=sorted(df2.annotation), labels=labels
-    )
+    ## TODO: sørg for at df1 og df2 har lik rekkefølge.
+    df1 = df1.sort_values(by="doc_hash")
+    df1 = df1.set_index("doc_hash")
+
+    df2 = df2.sort_values(by="doc_hash")
+    df2 = df2.set_index("doc_hash")
+
+    assert all(df1.index == df2.index)
+    logger.debug("df1 and df2 indices are the same")
+
+    score = cohen_kappa_score(y1=df1.annotation, y2=df2.annotation, labels=labels)
 
     logger.info("Cohens kappa: %s", score)
 
