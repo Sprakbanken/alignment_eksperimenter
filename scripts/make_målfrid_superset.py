@@ -2,8 +2,6 @@ import argparse
 import json
 import os
 import re
-from typing import Dict, List, Tuple
-
 import pandas as pd
 from tqdm import tqdm
 
@@ -17,29 +15,29 @@ def extract_year(dir_name: str) -> int:
     return int(m.group(1)) if m else -1
 
 
-def parse_filename(fname: str) -> Tuple[str, str, str]:
+def parse_filename(fname: str) -> tuple[str, str, str]:
     """
-    Forventer filnavn som <domain>_<lang>_<type>.jsonl, f.eks. '113.no_nob_pdf.jsonl'.
-    Returnerer (domain, lang, filetype).
+    Expects filename like <domain>_<lang>_<type>.jsonl, e.g. '113.no_nob_pdf.jsonl'.
+    Returns (domain, lang, filetype).
     """
     if not fname.endswith(".jsonl"):
-        raise ValueError(f"Ikke en .jsonl-fil: {fname}")
-    stem = fname[:-6]  # fjern .jsonl
+        raise ValueError(f"Not a .jsonl file: {fname}")
+    stem = fname[:-6]  # remove .jsonl
     parts = stem.split("_")
     if len(parts) < 3:
-        raise ValueError(f"Ugyldig filnavn-format: {fname}")
+        raise ValueError(f"Invalid filename format: {fname}")
     ftype = parts[-1]
     lang = parts[-2]
     domain = "_".join(parts[:-2])
     return domain, lang, ftype
 
 
-def find_grouped_files(data_dir: str) -> Dict[str, List[Tuple[int, str]]]:
+def find_grouped_files(data_dir: str) -> dict[str, list[tuple[int, str]]]:
     """
-    Finn alle jsonl-filer i maalfrid_YYYY-mapper og grupper dem etter <domain>_<lang>.
-    Returnerer: { group_key: [(year, filepath), ...] } sortert etter year asc, filepath asc.
+    Find all jsonl files in maalfrid_YYYY directories and group them by <domain>_<lang>.
+    Returns: { domain_lang: [(year, filepath), ...] } sorted by year asc, filepath asc.
     """
-    groups: Dict[str, List[Tuple[int, str]]] = {}
+    groups: dict[str, list[tuple[int, str]]] = {}
     for name in os.listdir(data_dir):
         if not is_year_dir(name):
             continue
@@ -59,7 +57,7 @@ def find_grouped_files(data_dir: str) -> Dict[str, List[Tuple[int, str]]]:
                 continue
             key = f"{domain}_{lang}"
             groups.setdefault(key, []).append((year, fp))
-    # Sorter slik at tidligere år kommer først (så "keep last" beholder nyeste)
+    # Sort so that earlier years come first (so "keep last" keeps newest)
     for key in groups:
         groups[key].sort(key=lambda t: (t[0], t[1]))
     return groups
@@ -67,24 +65,24 @@ def find_grouped_files(data_dir: str) -> Dict[str, List[Tuple[int, str]]]:
 
 
 
-def build_group_df(items: List[Tuple[int, str]], group_key: str = "") -> pd.DataFrame:
+def build_group_df(year_filepath_pairs: list[tuple[int, str]], domain_lang: str = "") -> pd.DataFrame:
     """
-    items: [(year, filepath), ...]
-    Returnerer en DataFrame med alle rader.
+    year_filepath_pairs: [(year, filepath), ...]
+    Returns a DataFrame with all rows.
     """
     frames = []
     for year, fp in tqdm(
-        items,
+        year_filepath_pairs,
         leave=False,
         position=1,
-        desc=(group_key if group_key else "Filer"),
+        desc="Files",
         unit="file",
         dynamic_ncols=True,
     ):
         try:
             rows = read_jsonl(fp)
         except Exception as e:
-            tqdm.write(f"[ADVARSEL] Klarte ikke lese fil: {fp} ({e})")
+            tqdm.write(f"[WARNING] Could not read file: {fp} ({e})")
             continue
         if not rows:
             continue
@@ -100,24 +98,19 @@ def build_group_df(items: List[Tuple[int, str]], group_key: str = "") -> pd.Data
 
 def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Dedupliser basert på URL eller doc-hash.
-    Rader med samme URL eller samme hash regnes som duplikater.
-    Den nyeste (basert på 'date'-kolonnen) beholdes.
+    Deduplicate based on URL or doc-hash.
+    Rows with same URL or same hash are considered duplicates.
+    The newest (based on 'date' column) is kept.
     """
-    if df.empty:
-        return df
 
-    url_col = "url" if "url" in df.columns else None
-    hash_col = "doc_hash" if "doc_hash" in df.columns else None
-
-    # Konverter date til streng for sortering (noen verdier kan være int av en eller annen grunn)
+    # Convert date to string for sorting (some values may be int for some reason)
     df["_date_str"] = df["date"].astype(str)
 
-    # Sorter etter dato (eldst først) så "keep last" velger nyeste
-    # ISO 8601-datoer sorteres som strenger (https://stackoverflow.com/questions/9576860/sort-iso-8601-dates-forward-or-backwards)
+    # Sort by date (oldest first) so "keep last" selects newest
+    # ISO 8601 dates sort as strings (https://stackoverflow.com/questions/9576860/sort-iso-8601-dates-forward-or-backwards)
     df = df.sort_values("_date_str", kind="stable", na_position="first")
 
-    # Dedupliser på url
+    # Deduplicate on url
     if url_col is not None:
         has_url = df[url_col].notna() & (df[url_col] != "")
 
@@ -129,7 +122,7 @@ def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
         df = pd.concat([df_with_url, df_without_url], ignore_index=True)
         df = df.sort_values("_date_str", kind="stable", na_position="first")
 
-    # Dedupliser på hash
+    # Deduplicate on hash
     if hash_col is not None:
         has_hash = df[hash_col].notna() & (df[hash_col] != "")
 
@@ -140,7 +133,7 @@ def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
 
         df = pd.concat([df_with_hash, df_without_hash], ignore_index=True)
 
-    # Fjern hjelpekolonnen
+    # Remove helper column
     df = df.drop(columns=["_date_str"], errors="ignore")
 
     return df
@@ -150,13 +143,13 @@ def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Lag et deduplisert superset av Målfrid-datasett på tvers av år (per domene+språk)."
+        description="Create a deduplicated superset of Målfrid dataset across years (per domain+language)."
     )
     parser.add_argument(
         "--data_dir",
         type=str,
         default=os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
-        help="Rotmappe som inneholder maalfrid_YYYY-mapper (default: ./data)",
+        help="Root directory containing maalfrid_YYYY dirs (default: ./data)",
     )
     parser.add_argument(
         "--output_dir",
@@ -164,17 +157,19 @@ def parse_args():
         default=os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "data", "maalfrid_superset"
         ),
-        help="Utdatamappe for superset (default: ./data/maalfrid_superset)",
+        help="Output directory for superset (default: ./data/maalfrid_superset)",
     )
     parser.add_argument(
         "--exclude_domains",
         type=str,
         nargs="*",
         default=[],
-        help="Liste over domener som skal utelates (f.eks. 'regjeringen.no').",
+        help="List of domains to exclude (e.g. 'regjeringen.no').",
     )
     return parser.parse_args()
 
+def domain_from_key(k: str) -> str:
+        return k.rsplit("_", 1)[0]
 
 def main():
     args = parse_args()
@@ -184,7 +179,7 @@ def main():
 
     groups = find_grouped_files(data_dir)
 
-    # Finn hvilke grupper som allerede er ferdig
+    # Find which groups are already done
     completed = {
         os.path.splitext(fn)[0]
         for fn in os.listdir(output_dir)
@@ -193,31 +188,32 @@ def main():
 
     exclude = set(args.exclude_domains or [])
 
-    def domain_from_key(k: str) -> str:
-        return k.rsplit("_", 1)[0]
 
-    keys_sorted = sorted(k for k in groups.keys() if domain_from_key(k) not in exclude)
-    keys_to_process = [k for k in keys_sorted if k not in completed]
 
-    print(f"Fant {len(groups)} grupper (domene+språk).")
-    print(f"Allerede ferdige: {len(completed)}. Gjenstår: {len(keys_to_process)}.")
+    keys_to_process = sorted(
+        k for k in groups.keys()
+        if domain_from_key(k) not in exclude and k not in completed
+    )
+
+    print(f"Found {len(groups)} groups (domain+language).")
+    print(f"Already done: {len(completed)}. Remaining: {len(keys_to_process)}.")
 
     for key in tqdm(
         keys_to_process,
-        desc="Lager supersett",
+        desc="Building superset",
         unit="group",
         dynamic_ncols=True,
     ):
-        items = groups[key]
-        tqdm.write(f"\nProsesserer: {key} ({len(items)} filer)")
+        year_filepath_pairs = groups[key]
+        tqdm.write(f"\nProcessing: {key} ({len(year_filepath_pairs)} files)")
 
-        df = build_group_df(items, group_key=key)
+        df = build_group_df(year_filepath_pairs, domain_lang=key)
 
         if df.empty:
             out_path = os.path.join(output_dir, f"{key}.jsonl")
             with open(out_path, "w", encoding="utf-8"):
                 pass
-            tqdm.write("  Tom gruppe, skrev tom fil.")
+            tqdm.write("  Empty group, wrote empty file.")
             continue
 
         rows_before = len(df)
@@ -225,13 +221,13 @@ def main():
         rows_after = len(df)
 
         tqdm.write(
-            f"  Rader før dedupe: {rows_before}, etter: {rows_after} (fjernet {rows_before - rows_after})"
+            f"  Rows before dedupe: {rows_before}, after: {rows_after} (removed {rows_before - rows_after})"
         )
 
         out_path = os.path.join(output_dir, f"{key}.jsonl")
         write_jsonl(out_path, df)
 
-    print(f"\nFerdig! Supersett skrevet til: {output_dir}")
+    print(f"\nDone! Superset written to: {output_dir}")
 
 
 if __name__ == "__main__":
