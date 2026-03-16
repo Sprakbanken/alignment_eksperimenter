@@ -146,32 +146,6 @@ def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def is_na_value(v) -> bool:
-    """Sjekk om en verdi er NA/NaN, håndterer også lister og andre typer."""
-    if v is None:
-        return True
-    if isinstance(v, (list, dict)):
-        return False  # Lister og dicts er alltid gyldige verdier
-    try:
-        return pd.isna(v)
-    except (ValueError, TypeError):
-        return False  # Hvis pd.isna feiler, anta at verdien er gyldig
-
-
-def write_jsonl(path: str, df: pd.DataFrame, chunksize: int = 50_000):
-    """Skriv DataFrame til JSONL-fil uten å endre innholdet."""
-    tqdm.write(f"  Skriver {len(df)} rader til {path}...")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-
-    with open(path, "w", encoding="utf-8") as f:
-        for start in range(0, len(df), chunksize):
-            chunk = df.iloc[start : start + chunksize]
-            for record in chunk.to_dict(orient="records"):
-                # Fjern NaN-verdier som pandas legger til, men behold lister og dicts
-                clean_record = {k: v for k, v in record.items() if not is_na_value(v)}
-                f.write(json.dumps(clean_record, ensure_ascii=False) + "\n")
-
-    tqdm.write(f"  Ferdig: {path}")
 
 
 def parse_args():
