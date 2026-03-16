@@ -65,22 +65,6 @@ def find_grouped_files(data_dir: str) -> Dict[str, List[Tuple[int, str]]]:
     return groups
 
 
-def read_jsonl(fp: str) -> List[dict]:
-    """Les JSONL-fil og returner liste av dicts."""
-    out = []
-    with open(fp, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                rec = json.loads(line)
-                if isinstance(rec, dict):
-                    out.append(rec)
-            except json.JSONDecodeError:
-                tqdm.write(f"[ADVARSEL] Klarte ikke parse linje i {fp}: {line[:50]}...")
-                continue
-    return out
 
 
 def build_group_df(items: List[Tuple[int, str]], group_key: str = "") -> pd.DataFrame:
