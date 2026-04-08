@@ -5,6 +5,7 @@ import os
 from typing import Iterable
 
 import pandas as pd
+import tqdm
 
 
 def compute_doc_hash(fulltext) -> str:
@@ -27,7 +28,11 @@ def add_hash_column(
     """
     Adds a hash column based on the `fulltext` column.
     """
-    df[hash_column_name] = df[column_name].apply(compute_doc_hash)
+    if column_name in df.columns:
+        df[hash_column_name] = df[column_name].apply(compute_doc_hash)
+    else:
+        number_of_missing_fulltext_columns += 1
+        print("No fulltext column found.")
     return df
 
 
@@ -48,7 +53,7 @@ def process_files(input_paths: list[str], output_dir: str | None) -> None:
 
     os.makedirs(output_dir, exist_ok=True) if output_dir else None
 
-    for fp in files:
+    for fp in tqdm.tqdm(files, desc="Processing files"):
         df = pd.read_json(fp, lines=True)
         df = add_hash_column(df, column_name="fulltext", hash_column_name="doc_hash")
         out_fp = os.path.join(output_dir, os.path.basename(fp)) if output_dir else fp
