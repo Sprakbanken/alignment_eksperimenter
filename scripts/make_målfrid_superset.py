@@ -12,7 +12,7 @@ def is_year_dir(name: str) -> bool:
 
 def extract_year(dir_name: str) -> int:
     m = re.fullmatch(r"maalfrid_(\d{4})", dir_name)
-    return int(m.group(1)) if m else -1
+    return int(m.group(1))
 
 
 def parse_filename(fname: str) -> tuple[str, str, str]:
@@ -24,8 +24,6 @@ def parse_filename(fname: str) -> tuple[str, str, str]:
         raise ValueError(f"Not a .jsonl file: {fname}")
     stem = fname[:-6]  # remove .jsonl
     parts = stem.split("_")
-    if len(parts) < 3:
-        raise ValueError(f"Invalid filename format: {fname}")
     ftype = parts[-1]
     lang = parts[-2]
     domain = "_".join(parts[:-2])
@@ -49,8 +47,6 @@ def find_grouped_files(data_dir: str) -> dict[str, list[tuple[int, str]]]:
             fp = os.path.join(year_path, entry)
             if not os.path.isfile(fp):
                 continue
-            if not entry.endswith(".jsonl"):
-                continue
             try:
                 domain, lang, _ = parse_filename(entry)
             except ValueError:
@@ -65,7 +61,7 @@ def find_grouped_files(data_dir: str) -> dict[str, list[tuple[int, str]]]:
 
 
 
-def build_group_df(year_filepath_pairs: list[tuple[int, str]], domain_lang: str = "") -> pd.DataFrame:
+def build_group_df(year_filepath_pairs: list[tuple[int, str]]) -> pd.DataFrame:
     """
     year_filepath_pairs: [(year, filepath), ...]
     Returns a DataFrame with all rows.
@@ -80,15 +76,15 @@ def build_group_df(year_filepath_pairs: list[tuple[int, str]], domain_lang: str 
         dynamic_ncols=True,
     ):
         try:
-            rows = read_jsonl(fp)
+            rows = pd.read_json(fp, lines=True)
         except Exception as e:
             tqdm.write(f"[WARNING] Could not read file: {fp} ({e})")
             continue
-        if not rows:
+        if rows.empty:
+            tqdm.write(f"  Empty file: {fp}")
             continue
 
-        df = pd.DataFrame(rows)
-        frames.append(df)
+        frames.append(rows)
 
     if not frames:
         return pd.DataFrame()
@@ -109,7 +105,8 @@ def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
     # Sort by date (oldest first) so "keep last" selects newest
     # ISO 8601 dates sort as strings (https://stackoverflow.com/questions/9576860/sort-iso-8601-dates-forward-or-backwards)
     df = df.sort_values("_date_str", kind="stable", na_position="first")
-
+    url_col = "url" if "url" in df.columns else None
+    hash_col = "doc_hash" if "doc_hash" in df.columns else None
     # Deduplicate on url
     if url_col is not None:
         has_url = df[url_col].notna() & (df[url_col] != "")
@@ -207,7 +204,7 @@ def main():
         year_filepath_pairs = groups[key]
         tqdm.write(f"\nProcessing: {key} ({len(year_filepath_pairs)} files)")
 
-        df = build_group_df(year_filepath_pairs, domain_lang=key)
+        df = build_group_df(year_filepath_pairs)
 
         if df.empty:
             out_path = os.path.join(output_dir, f"{key}.jsonl")
@@ -225,7 +222,7 @@ def main():
         )
 
         out_path = os.path.join(output_dir, f"{key}.jsonl")
-        write_jsonl(out_path, df)
+        df.to_json(out_path, orient="records", lines=True)
 
     print(f"\nDone! Superset written to: {output_dir}")
 
