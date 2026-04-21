@@ -33,41 +33,43 @@ def decompress_gz_files(directory: Path):
         gz_file.unlink()
 
 
-def download_and_extract_malfrid(
-    målfrid_url: str,
-    data_path: Path,
-):
-    """Download and extract the Målfrid project data from the resource catalouge"""
-
-    # Create data directory if it doesn't exist
-    data_path.mkdir(parents=True, exist_ok=True)
-
-    tar_file_path = data_path / "målfrid_out.tar"
-
+def download_malfrid_data(målfrid_url: str, tar_file_path: Path):
     logger.info(f"Downloading Målfrid data from {målfrid_url}...")
     try:
         # Download the tar file
         urllib.request.urlretrieve(målfrid_url, tar_file_path)
         logger.info(f"Download completed: {tar_file_path}")
+    except Exception:
+        logger.exception("Error downloading data")
 
-        # Extract the tar file
-        logger.info("Extracting tar file...")
-        with tarfile.open(tar_file_path, "r") as tar:
-            tar.extractall(path=data_path)
-        logger.info(f"Extraction completed to: {data_path}")
 
-        # Decompress all .gz files in the extracted content
-        logger.info("Decompressing .gz files...")
-        decompress_gz_files(data_path)
-        logger.info("Decompression completed.")
+def download_and_extract_malfrid(
+    målfrid_url: str, data_path: Path, tar_file_path: Path | None = None
+):
+    """Download and extract the Målfrid project data from the resource catalouge"""
 
-        logger.info("Removing tar file...")
-        tar_file_path.unlink()
-        logger.info("Cleanup completed.")
+    # Create data directory if it doesn't exist
+    data_path.mkdir(parents=True, exist_ok=True)
+    if tar_file_path is None:
+        tar_file_path = data_path / "målfrid_out.tar"
 
-    except Exception as e:
-        logger.error(f"Error downloading or extracting data: {e}")
-        return False
+    if not tar_file_path.exists():
+        download_malfrid_data(målfrid_url=målfrid_url, tar_file_path=tar_file_path)
+
+    # Extract the tar file
+    logger.info("Extracting tar file...")
+    with tarfile.open(tar_file_path, "r") as tar:
+        tar.extractall(path=data_path)
+    logger.info(f"Extraction completed to: {data_path}")
+
+    # Decompress all .gz files in the extracted content
+    logger.info("Decompressing .gz files...")
+    decompress_gz_files(data_path)
+    logger.info("Decompression completed.")
+
+    logger.info("Removing tar file...")
+    tar_file_path.unlink()
+    logger.info("Cleanup completed.")
 
     return True
 
@@ -90,6 +92,9 @@ def parse_args():
         help="Path to extract the dataset to (default: %(default)s)",
     )
     parser.add_argument(
+        "--tar_file_path", type=Path, help="Tar file path", required=True
+    )
+    parser.add_argument(
         "--log_level",
         type=str,
         default="INFO",
@@ -105,7 +110,7 @@ if __name__ == "__main__":
     setup_logging("download_malfrid", args.log_level)
 
     success = download_and_extract_malfrid(
-        målfrid_url=args.url, data_path=args.data_path
+        målfrid_url=args.url, data_path=args.data_path, tar_file_path=args.tar_file_path
     )
     if success:
         logger.info("Målfrid data successfully downloaded and extracted!")
