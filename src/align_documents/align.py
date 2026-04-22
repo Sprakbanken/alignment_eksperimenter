@@ -59,7 +59,7 @@ def get_document_embeddings(
 
     if filename.exists():
         logger.debug("Loading embeddings from %s", filename)
-        embeddings = torch.load(filename)
+        embeddings = torch.load(filename, weights_only=False)
 
         # Crude check for compatible file version.
         #    TODO:
