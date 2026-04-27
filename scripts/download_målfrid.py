@@ -37,13 +37,13 @@ def decompress_gz_files(directory: Path) -> None:
 
 
 def download_malfrid_data(målfrid_url: str, tar_file_path: Path):
-    logger.info(f"Downloading Målfrid data from {målfrid_url}...")
-    try:
-        # Download the tar file
-        urllib.request.urlretrieve(målfrid_url, tar_file_path)
-        logger.info(f"Download completed: {tar_file_path}")
-    except Exception:
-        logger.exception("Error downloading data")
+    logger.info(
+        "Downloading Målfrid data from %s (saving to %s)", målfrid_url, tar_file_path
+    )
+
+    # Download the tar file
+    urllib.request.urlretrieve(målfrid_url, tar_file_path)
+    logger.info("Download completed: %s", tar_file_path)
 
 
 def parse_args():
