@@ -9,6 +9,13 @@ import regex as re
 logger = logging.getLogger(__name__)
 
 
+def add_pair_key(df: pd.DataFrame) -> pd.DataFrame:
+    """Add a `pair_key` column joining `doc_hash_lang_1` and `doc_hash_lang_2`."""
+    df = df.copy()
+    df["pair_key"] = df["doc_hash_lang_1"] + "|" + df["doc_hash_lang_2"]
+    return df
+
+
 def get_file_info(data_dir: Path) -> pd.DataFrame:
     info = sorted(
         [e.name[:-6].split("_") + [e.name, e] for e in data_dir.glob("*.jsonl")]

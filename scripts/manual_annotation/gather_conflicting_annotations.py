@@ -3,7 +3,6 @@ import logging
 from pathlib import Path
 from align_documents.utils import setup_logging
 from align_documents.utils.dataframe import add_pair_key
-from sklearn.metrics import cohen_kappa_score
 import pandas as pd
 
 
@@ -28,6 +27,15 @@ def parse_args():
         help="Path to the annotated data (.csv-file) from annotator 2 (default: %(default)s)",
     )
     parser.add_argument(
+        "--output_file",
+        "-o",
+        type=Path,
+        default=Path(
+            "data/output/data_for_manual_annotation/conflicting_annotation.csv"
+        ),
+        help="Path to output file to store conflicting annotations",
+    )
+    parser.add_argument(
         "--log_level",
         type=str,
         default="INFO",
@@ -39,7 +47,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    setup_logging("calculate_annotator_agreement", args.log_level)
+    setup_logging("gather_conflicting_annotations", args.log_level)
 
     df1 = pd.read_csv(args.annotator_one)
     df2 = pd.read_csv(args.annotator_two)
@@ -64,22 +72,34 @@ def main():
     logger.info("%s document pairs are doubly annotated", len(overlapping_pair_keys))
 
     df1 = df1[df1.pair_key.isin(overlapping_pair_keys)]
-    logger.debug("len(df1) %s", len(df1))
     df2 = df2[df2.pair_key.isin(overlapping_pair_keys)]
-    logger.debug("len(df2) %s", len(df2))
 
     df1 = df1.sort_values(by="pair_key")
-    df1 = df1.set_index("pair_key")
+    df1.reset_index(inplace=True)
 
     df2 = df2.sort_values(by="pair_key")
-    df2 = df2.set_index("pair_key")
+    df2.reset_index(inplace=True)
 
     assert all(df1.index == df2.index)
-    logger.debug("df1 and df2 indices are the same")
+    assert all(df1.pair_key == df2.pair_key)
 
-    score = cohen_kappa_score(y1=df1.annotation, y2=df2.annotation, labels=labels)
+    conflicting_annotation_mask = df1.annotation != df2.annotation
 
-    logger.info("Cohens kappa: %s", score)
+    df = df1[conflicting_annotation_mask]
+
+    logger.info("%s document pairs have conflicting annotations", len(df))
+
+    df = df.rename(columns={"annotation": "annotator_1_annotation"})
+    df["annotator_2_annotation"] = df2[conflicting_annotation_mask].annotation
+
+    for tup in df.itertuples():
+        logger.debug(
+            "Annotator 1: %s Annotator 2: %s",
+            tup.annotator_1_annotation,
+            tup.annotator_2_annotation,
+        )
+
+    df.to_csv(args.output_file, index=False)
 
 
 if __name__ == "__main__":
