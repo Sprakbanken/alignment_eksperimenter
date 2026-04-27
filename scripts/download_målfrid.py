@@ -92,7 +92,7 @@ def parse_args():
         help="Path to extract the dataset to (default: %(default)s)",
     )
     parser.add_argument(
-        "--tar_file_path", type=Path, help="Tar file path", required=True
+        "--tar_file_path", type=Path, help="Tar file path", required=False
     )
     parser.add_argument(
         "--log_level",
