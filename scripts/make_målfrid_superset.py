@@ -1,7 +1,8 @@
 import argparse
 import logging
-import os
 import re
+from pathlib import Path
+
 import pandas as pd
 from tqdm import tqdm
 
@@ -34,36 +35,34 @@ def parse_filename(fname: str) -> tuple[str, str, str]:
     return domain, lang, ftype
 
 
-def find_grouped_files(data_dir: str) -> dict[str, list[tuple[int, str]]]:
+def find_grouped_files(data_dir: Path) -> dict[str, list[tuple[int, Path]]]:
     """
     Find all jsonl files in maalfrid_YYYY directories and group them by <domain>_<lang>.
     Returns: { domain_lang: [(year, filepath), ...] } sorted by year asc, filepath asc.
     """
-    groups: dict[str, list[tuple[int, str]]] = {}
-    for name in os.listdir(data_dir):
-        if not is_year_dir(name):
+    groups: dict[str, list[tuple[int, Path]]] = {}
+    for child in data_dir.iterdir():
+        if not is_year_dir(child.name):
             continue
-        year = extract_year(name)
-        year_path = os.path.join(data_dir, name)
-        if not os.path.isdir(year_path):
+        year = extract_year(child.name)
+        if not child.is_dir():
             continue
-        for entry in os.listdir(year_path):
-            fp = os.path.join(year_path, entry)
-            if not os.path.isfile(fp):
+        for entry in child.iterdir():
+            if not entry.is_file():
                 continue
             try:
-                domain, lang, _ = parse_filename(entry)
+                domain, lang, _ = parse_filename(entry.name)
             except ValueError:
                 continue
             key = f"{domain}_{lang}"
-            groups.setdefault(key, []).append((year, fp))
+            groups.setdefault(key, []).append((year, entry))
     # Sort so that earlier years come first (so "keep last" keeps newest)
     for key in groups:
         groups[key].sort(key=lambda t: (t[0], t[1]))
     return groups
 
 
-def build_group_df(year_filepath_pairs: list[tuple[int, str]]) -> pd.DataFrame:
+def build_group_df(year_filepath_pairs: list[tuple[int, Path]]) -> pd.DataFrame:
     """
     year_filepath_pairs: [(year, filepath), ...]
     Returns a DataFrame with all rows.
@@ -144,16 +143,14 @@ def parse_args():
     )
     parser.add_argument(
         "--data_dir",
-        type=str,
-        default=os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
+        type=Path,
+        default=Path(__file__).resolve().parent.parent / "data",
         help="Root directory containing maalfrid_YYYY dirs (default: ./data)",
     )
     parser.add_argument(
         "--output_dir",
-        type=str,
-        default=os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "data", "maalfrid_superset"
-        ),
+        type=Path,
+        default=Path(__file__).resolve().parent.parent / "data" / "maalfrid_superset",
         help="Output directory for superset (default: ./data/maalfrid_superset)",
     )
     parser.add_argument(
@@ -172,17 +169,15 @@ def domain_from_key(k: str) -> str:
 
 def main():
     args = parse_args()
-    data_dir = args.data_dir
-    output_dir = args.output_dir
-    os.makedirs(output_dir, exist_ok=True)
+    data_dir: Path = args.data_dir
+    output_dir: Path = args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     groups = find_grouped_files(data_dir)
 
     # Find which groups are already done
     completed = {
-        os.path.splitext(fn)[0]
-        for fn in os.listdir(output_dir)
-        if fn.endswith(".jsonl") and os.path.isfile(os.path.join(output_dir, fn))
+        p.stem for p in output_dir.iterdir() if p.suffix == ".jsonl" and p.is_file()
     }
 
     exclude = set(args.exclude_domains or [])
@@ -210,9 +205,8 @@ def main():
         df = build_group_df(year_filepath_pairs)
 
         if df.empty:
-            out_path = os.path.join(output_dir, f"{key}.jsonl")
-            with open(out_path, "w", encoding="utf-8"):
-                pass
+            out_path = output_dir / f"{key}.jsonl"
+            out_path.write_text("")
             logger.info("Empty group, wrote empty file.")
             continue
 
@@ -227,7 +221,7 @@ def main():
             rows_before - rows_after,
         )
 
-        out_path = os.path.join(output_dir, f"{key}.jsonl")
+        out_path = output_dir / f"{key}.jsonl"
         df.to_json(out_path, orient="records", lines=True)
 
     logger.info("Done! Superset written to: %s", output_dir)
