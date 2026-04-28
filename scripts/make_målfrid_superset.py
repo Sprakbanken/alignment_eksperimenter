@@ -1,8 +1,13 @@
 import argparse
+import logging
 import os
 import re
 import pandas as pd
 from tqdm import tqdm
+
+from align_documents.utils import setup_logging
+
+logger = logging.getLogger(__name__)
 
 
 def is_year_dir(name: str) -> bool:
@@ -75,10 +80,10 @@ def build_group_df(year_filepath_pairs: list[tuple[int, str]]) -> pd.DataFrame:
         try:
             rows = pd.read_json(fp, lines=True)
         except Exception as e:
-            tqdm.write(f"[WARNING] Could not read file: {fp} ({e})")
+            logger.warning("Could not read file: %s (%s)", fp, e)
             continue
         if rows.empty:
-            tqdm.write(f"  Empty file: {fp}")
+            logger.info("Empty file: %s", fp)
             continue
 
         frames.append(rows)
@@ -188,8 +193,10 @@ def main():
         if domain_from_key(k) not in exclude and k not in completed
     )
 
-    print(f"Found {len(groups)} groups (domain+language).")
-    print(f"Already done: {len(completed)}. Remaining: {len(keys_to_process)}.")
+    logger.info("Found %s groups (domain+language).", len(groups))
+    logger.info(
+        "Already done: %s. Remaining: %s.", len(completed), len(keys_to_process)
+    )
 
     for key in tqdm(
         keys_to_process,
@@ -198,7 +205,7 @@ def main():
         dynamic_ncols=True,
     ):
         year_filepath_pairs = groups[key]
-        tqdm.write(f"\nProcessing: {key} ({len(year_filepath_pairs)} files)")
+        logger.info("Processing: %s (%s files)", key, len(year_filepath_pairs))
 
         df = build_group_df(year_filepath_pairs)
 
@@ -206,22 +213,26 @@ def main():
             out_path = os.path.join(output_dir, f"{key}.jsonl")
             with open(out_path, "w", encoding="utf-8"):
                 pass
-            tqdm.write("  Empty group, wrote empty file.")
+            logger.info("Empty group, wrote empty file.")
             continue
 
         rows_before = len(df)
         df = dedupe_keep_last(df)
         rows_after = len(df)
 
-        tqdm.write(
-            f"  Rows before dedupe: {rows_before}, after: {rows_after} (removed {rows_before - rows_after})"
+        logger.info(
+            "Rows before dedupe: %s, after: %s (removed %s)",
+            rows_before,
+            rows_after,
+            rows_before - rows_after,
         )
 
         out_path = os.path.join(output_dir, f"{key}.jsonl")
         df.to_json(out_path, orient="records", lines=True)
 
-    print(f"\nDone! Superset written to: {output_dir}")
+    logger.info("Done! Superset written to: %s", output_dir)
 
 
 if __name__ == "__main__":
+    setup_logging(source_script="make_målfrid_superset", log_level="INFO")
     main()
