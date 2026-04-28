@@ -76,13 +76,15 @@ def parse_args():
         "--data_dir",
         type=Path,
         default=Path(__file__).resolve().parent.parent / "data",
-        help="Root directory containing maalfrid_YYYY dirs (default: ./data)",
+        help="Root directory containing maalfrid_YYYY dirs (default: %(default)s)",
     )
     parser.add_argument(
         "--output_dir",
         type=Path,
-        default=Path(__file__).resolve().parent.parent / "data" / "maalfrid_superset",
-        help="Output directory for superset (default: ./data/maalfrid_superset)",
+        default=Path(__file__).resolve().parent.parent
+        / "data"
+        / "maalfrid_superset_alt",
+        help="Output directory for superset (default: %(default)s)",
     )
     parser.add_argument(
         "--exclude_domains",
