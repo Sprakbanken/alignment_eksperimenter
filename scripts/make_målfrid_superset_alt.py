@@ -60,12 +60,14 @@ def find_grouped_files(data_dir: Path) -> dict[str, dict[int], Path]:
 def add_rows_if_missing(df: pd.DataFrame, other_df: pd.DataFrame) -> pd.DataFrame:
     """Only add rows from other_df if they dont already exist in df"""
     if df.empty:
-        return other_df
-    url_is_new = ~other_df.url.isin(df.url)
-    doc_hash_is_new = ~other_df.doc_hash.isin(df.doc_hash)
-    keep = url_is_new & doc_hash_is_new
+        df_to_keep = other_df
+    else:
+        url_is_new = ~other_df.url.isin(df.url)
+        doc_hash_is_new = ~other_df.doc_hash.isin(df.doc_hash)
+        keep = url_is_new & doc_hash_is_new
+        df_to_keep = pd.concat([df, other_df[keep]], ignore_index=True)
 
-    return pd.concat([df, other_df[keep]], ignore_index=True)
+    return df_to_keep.drop_duplicates(subset=["url", "doc_hash"], ignore_index=True)
 
 
 def parse_args():
