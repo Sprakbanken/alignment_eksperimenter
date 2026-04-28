@@ -19,7 +19,10 @@ def compute_doc_hash(fulltext: list[str]) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def process_files(input_dir: Path, output_dir: Path) -> None:
+def create_files_with_dochash(
+    input_dir: Path, output_dir: Path, overwrite: bool
+) -> None:
+    """Create doc_hash column based on fulltext column"""
     jsonl_files = list(input_dir.glob("*.jsonl"))
     if not jsonl_files:
         raise ValueError("No JSONL files found in the given paths.")
@@ -27,6 +30,13 @@ def process_files(input_dir: Path, output_dir: Path) -> None:
     output_dir.mkdir(exist_ok=True)
 
     for fp in tqdm.tqdm(jsonl_files, desc="Processing jsonl files"):
+        out_fp = output_dir / fp.name
+
+        if not overwrite and out_fp.exists() and out_fp != fp:
+            logger.debug("%s already exists, skipping", out_fp)
+            continue
+
+        logger.debug("Reading %s", fp)
         df = pd.read_json(fp, lines=True)
         if "fulltext" not in df.columns:
             logger.warning("Column 'fulltext' not in jsonl file %s", fp)
@@ -57,6 +67,11 @@ def parse_args() -> argparse.Namespace:
         help="Optional output directory. If omitted, files are modified in place.",
     )
     parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="If flagged, will overwrite existing output files",
+    )
+    parser.add_argument(
         "--log_level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -69,7 +84,7 @@ def main():
     args = parse_args()
     setup_logging("hash_documents", args.log_level)
     output_dir = args.output_dir if args.output_dir else args.input_dir
-    process_files(args.input_dir, output_dir)
+    create_files_with_dochash(args.input_dir, output_dir, overwrite=args.overwrite)
 
 
 if __name__ == "__main__":
