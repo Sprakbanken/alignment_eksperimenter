@@ -41,7 +41,6 @@ def download_malfrid_data(målfrid_url: str, tar_file_path: Path):
         "Downloading Målfrid data from %s (saving to %s)", målfrid_url, tar_file_path
     )
 
-    # Download the tar file
     subprocess.run(
         ["wget", "-O", str(tar_file_path), målfrid_url],
         check=True,
