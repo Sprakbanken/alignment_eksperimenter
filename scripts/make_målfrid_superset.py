@@ -8,6 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from align_documents.utils import setup_logging
+from align_documents.utils.dataframe import dedupe_keep_last
 
 logger = logging.getLogger(__name__)
 
@@ -54,38 +55,6 @@ def build_df(jsonl_files: list[Path]) -> pd.DataFrame:
         return pd.DataFrame()
 
     return pd.concat(frames, ignore_index=True)
-
-
-def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Deduplicate based on URL or doc-hash.
-    Rows with same URL or same hash are considered duplicates.
-    The newest (based on 'date' column) is kept.
-    """
-
-    # Convert date to string for sorting (some values may be int for some reason)
-    df["date"] = df["date"].astype(str)
-
-    # Sort by date (oldest first) so "keep last" selects newest
-    # ISO 8601 dates sort as strings (https://stackoverflow.com/questions/9576860/sort-iso-8601-dates-forward-or-backwards)
-    df = df.sort_values("date", kind="stable", na_position="first")
-
-    # Deduplicate on url
-    has_url = df["url"].notna() & (df["url"] != "")
-    df_with_url = df[has_url].copy()
-    df_without_url = df[~has_url].copy()
-    df_with_url = df_with_url.drop_duplicates(subset=["url"], keep="last")
-    df = pd.concat([df_with_url, df_without_url], ignore_index=True)
-    df = df.sort_values("date", kind="stable", na_position="first")
-
-    # Deduplicate on hash
-    has_hash = df["doc_hash"].notna() & (df["doc_hash"] != "")
-    df_with_hash = df[has_hash].copy()
-    df_without_hash = df[~has_hash].copy()
-    df_with_hash = df_with_hash.drop_duplicates(subset=["doc_hash"], keep="last")
-    df = pd.concat([df_with_hash, df_without_hash], ignore_index=True)
-
-    return df
 
 
 def parse_args():
