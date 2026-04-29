@@ -45,5 +45,16 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+
+[tool.uv]
+environments = ["sys_platform == 'linux'"]
+
 [tool.pdm]
 distribution = true
