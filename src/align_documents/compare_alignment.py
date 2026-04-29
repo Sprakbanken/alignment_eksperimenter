@@ -66,9 +66,9 @@ def compare_alignment(
         aggregation_strategy=config.aggregation_strategy,
     )
 
-    false_positives = [
+    false_positives = sum(
         lang1_index == lang2_index for lang1_index, lang2_index in matches
-    ]
+    )
     true_negatives = len(negative_pairs) - false_positives
     logger.debug("False positives: %s", false_positives)
 

@@ -20,8 +20,12 @@ devenv.local.nix
 # pre-commit
 .pre-commit-config.yaml
 
-maalfrid_2025*
-maalfrid_2024*
-maalfrid_2023*
-maalfrid_2022*
 maalfrid_2021*
+maalfrid_2022*
+maalfrid_2023*
+maalfrid_2024*
+maalfrid_2025*
+maalfrid_out*
+maalfrid_superset*
+data/output/grid_search
+maalfrid_superset

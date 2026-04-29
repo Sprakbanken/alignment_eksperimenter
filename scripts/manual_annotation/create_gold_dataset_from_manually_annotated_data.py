@@ -3,14 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 from align_documents.utils import setup_logging
+from align_documents.utils.dataframe import add_pair_key
 
 logger = logging.getLogger(__name__)
-
-
-def add_pair_key(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-    df["pair_key"] = df["doc_hash_lang_1"] + "|" + df["doc_hash_lang_2"]
-    return df
 
 
 def filter_rows(df: pd.DataFrame) -> pd.DataFrame:

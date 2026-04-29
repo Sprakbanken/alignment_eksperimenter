@@ -9,6 +9,13 @@ import regex as re
 logger = logging.getLogger(__name__)
 
 
+def add_pair_key(df: pd.DataFrame) -> pd.DataFrame:
+    """Add a `pair_key` column joining `doc_hash_lang_1` and `doc_hash_lang_2`."""
+    df = df.copy()
+    df["pair_key"] = df["doc_hash_lang_1"] + "|" + df["doc_hash_lang_2"]
+    return df
+
+
 def get_file_info(data_dir: Path) -> pd.DataFrame:
     info = sorted(
         [e.name[:-6].split("_") + [e.name, e] for e in data_dir.glob("*.jsonl")]
@@ -47,6 +54,38 @@ def jsonl_files_to_df(filepaths: Iterable[str | Path]) -> pd.DataFrame:
     logger.debug("Finished reading jsonl files into dataframes")
     df = pd.concat(dfs).reset_index(drop=True)
     df["fulltext_joined"] = df.fulltext.apply(lambda x: "\n".join(x))
+    return df
+
+
+def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Deduplicate based on URL or doc-hash.
+    Rows with same URL or same hash are considered duplicates.
+    The newest (based on 'date' column) is kept.
+    """
+
+    # Convert date to string for sorting (some values may be int for some reason)
+    df["date"] = df["date"].astype(str)
+
+    # Sort by date (oldest first) so "keep last" selects newest
+    # ISO 8601 dates sort as strings (https://stackoverflow.com/questions/9576860/sort-iso-8601-dates-forward-or-backwards)
+    df = df.sort_values("date", kind="stable", na_position="first")
+
+    # Deduplicate on url
+    has_url = df["url"].notna() & (df["url"] != "")
+    df_with_url = df[has_url].copy()
+    df_without_url = df[~has_url].copy()
+    df_with_url = df_with_url.drop_duplicates(subset=["url"], keep="last")
+    df = pd.concat([df_with_url, df_without_url], ignore_index=True)
+    df = df.sort_values("date", kind="stable", na_position="first")
+
+    # Deduplicate on hash
+    has_hash = df["doc_hash"].notna() & (df["doc_hash"] != "")
+    df_with_hash = df[has_hash].copy()
+    df_without_hash = df[~has_hash].copy()
+    df_with_hash = df_with_hash.drop_duplicates(subset=["doc_hash"], keep="last")
+    df = pd.concat([df_with_hash, df_without_hash], ignore_index=True)
+
     return df
 
 
