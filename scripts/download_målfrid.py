@@ -1,5 +1,5 @@
 import tarfile
-import urllib.request
+import subprocess
 import logging
 import argparse
 import gzip
@@ -41,8 +41,10 @@ def download_malfrid_data(målfrid_url: str, tar_file_path: Path):
         "Downloading Målfrid data from %s (saving to %s)", målfrid_url, tar_file_path
     )
 
-    # Download the tar file
-    urllib.request.urlretrieve(målfrid_url, tar_file_path)
+    subprocess.run(
+        ["wget", "-O", str(tar_file_path), målfrid_url],
+        check=True,
+    )
     logger.info("Download completed: %s", tar_file_path)
 
 
@@ -104,5 +106,5 @@ if __name__ == "__main__":
     logger.info("Decompression completed.")
 
     logger.info("Removing tar file...")
-    args.tar_file_path.unlink()
+    args.tar_file_path.unlink(missing_ok=True)
     logger.info("Cleanup completed.")
