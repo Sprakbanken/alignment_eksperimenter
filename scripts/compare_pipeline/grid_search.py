@@ -83,7 +83,7 @@ if __name__ == "__main__":
                             languages=(lang1, lang2),
                             data_dir=Path(""),
                             output_dir=model_output_dir,
-                            batch_size=32,
+                            batch_size=4,
                             number_to_letter_ratio=0,
                             min_document_length=0,
                         )
