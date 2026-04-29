@@ -36,16 +36,9 @@ def find_grouped_files(data_dir: Path) -> dict[tuple[str, str], list[Path]]:
 
 
 def build_df(jsonl_files: list[Path]) -> pd.DataFrame:
-    """Returns a DataFrame with all rows of all jsonl files."""
+    """Returns a DataFrame with all rows of the jsonl files."""
     frames = []
-    for filepath in tqdm(
-        jsonl_files,
-        leave=False,
-        position=1,
-        desc="Files",
-        unit="file",
-        dynamic_ncols=True,
-    ):
+    for filepath in jsonl_files:
         try:
             rows = pd.read_json(filepath, lines=True)
         except Exception:
@@ -176,7 +169,7 @@ def main(args):
         df = dedupe_keep_last(df)
         rows_after = len(df)
 
-        logger.info(
+        logger.debug(
             "Rows before dedupe: %s, after: %s (removed %s)",
             rows_before,
             rows_after,
