@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 OUTPUT_DIR = Path("data/output/grid_search")
 # todo: add more models
 EMBEDDING_MODEL_LIST = [
-    "NbAiLab/nb-sbert-v2-base",
-    # "jinaai/jina-embeddings-v5-text-small",
-    "codefuse-ai/F2LLM-v2-1.7B",
+    # "NbAiLab/nb-sbert-v2-base",
+    "microsoft/harrier-oss-v1-0.6b",
+    # "codefuse-ai/F2LLM-v2-1.7B",
 ]
 AGGREGATION_STRATEGY = ["mean", "cut-off"]
 THRESHOLDS = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
