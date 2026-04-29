@@ -1,6 +1,7 @@
 import argparse
 import logging
 import re
+from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -11,65 +12,34 @@ from align_documents.utils import setup_logging
 logger = logging.getLogger(__name__)
 
 
-def is_year_dir(name: str) -> bool:
-    return re.fullmatch(r"maalfrid_(\d{4})", name) is not None
-
-
-def extract_year(dir_name: str) -> int:
+def extract_year(dir_name: str) -> int | None:
     m = re.fullmatch(r"maalfrid_(\d{4})", dir_name)
-    return int(m.group(1))
+    return int(m.group(1)) if m else None
 
 
-def parse_filename(fname: str) -> tuple[str, str, str]:
+def find_grouped_files(data_dir: Path) -> dict[tuple[str, str], list[Path]]:
     """
-    Expects filename like <domain>_<lang>_<type>.jsonl, e.g. '113.no_nob_pdf.jsonl'.
-    Returns (domain, lang, filetype).
+    Find all jsonl files in maalfrid_YYYY directories and group them by (domain, lang).
+    Returns: { (domain, lang): [filepath1, filepath2, ...] }
     """
-    if not fname.endswith(".jsonl"):
-        raise ValueError(f"Not a .jsonl file: {fname}")
-    stem = fname[:-6]  # remove .jsonl
-    parts = stem.split("_")
-    ftype = parts[-1]
-    lang = parts[-2]
-    domain = "_".join(parts[:-2])
-    return domain, lang, ftype
-
-
-def find_grouped_files(data_dir: Path) -> dict[str, list[tuple[int, Path]]]:
-    """
-    Find all jsonl files in maalfrid_YYYY directories and group them by <domain>_<lang>.
-    Returns: { domain_lang: [(year, filepath), ...] } sorted by year asc, filepath asc.
-    """
-    groups: dict[str, list[tuple[int, Path]]] = {}
-    for child in data_dir.iterdir():
-        if not is_year_dir(child.name):
+    groups: dict[tuple[str, str], list[tuple[int, Path]]] = defaultdict(list)
+    for year_dir in data_dir.iterdir():
+        if not year_dir.is_dir():
             continue
-        year = extract_year(child.name)
-        if not child.is_dir():
+        year = extract_year(year_dir.name)
+        if year is None:
             continue
-        for entry in child.iterdir():
-            if not entry.is_file():
-                continue
-            try:
-                domain, lang, _ = parse_filename(entry.name)
-            except ValueError:
-                continue
-            key = f"{domain}_{lang}"
-            groups.setdefault(key, []).append((year, entry))
-    # Sort so that earlier years come first (so "keep last" keeps newest)
-    for key in groups:
-        groups[key].sort(key=lambda t: (t[0], t[1]))
+        for entry in year_dir.glob("*.jsonl"):
+            domain, lang, _ftype = entry.stem.split("_")
+            groups[(domain, lang)].append(entry)
     return groups
 
 
-def build_group_df(year_filepath_pairs: list[tuple[int, Path]]) -> pd.DataFrame:
-    """
-    year_filepath_pairs: [(year, filepath), ...]
-    Returns a DataFrame with all rows.
-    """
+def build_df(jsonl_files: list[Path]) -> pd.DataFrame:
+    """Returns a DataFrame with all rows of all jsonl files."""
     frames = []
-    for year, fp in tqdm(
-        year_filepath_pairs,
+    for filepath in tqdm(
+        jsonl_files,
         leave=False,
         position=1,
         desc="Files",
@@ -77,12 +47,12 @@ def build_group_df(year_filepath_pairs: list[tuple[int, Path]]) -> pd.DataFrame:
         dynamic_ncols=True,
     ):
         try:
-            rows = pd.read_json(fp, lines=True)
-        except Exception as e:
-            logger.warning("Could not read file: %s (%s)", fp, e)
+            rows = pd.read_json(filepath, lines=True)
+        except Exception:
+            logger.exception("Could not read file: %s", filepath)
             continue
         if rows.empty:
-            logger.info("Empty file: %s", fp)
+            logger.info("Empty file: %s", filepath)
             continue
 
         frames.append(rows)
@@ -101,38 +71,26 @@ def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     # Convert date to string for sorting (some values may be int for some reason)
-    df["_date_str"] = df["date"].astype(str)
+    df["date"] = df["date"].astype(str)
 
     # Sort by date (oldest first) so "keep last" selects newest
     # ISO 8601 dates sort as strings (https://stackoverflow.com/questions/9576860/sort-iso-8601-dates-forward-or-backwards)
-    df = df.sort_values("_date_str", kind="stable", na_position="first")
-    url_col = "url" if "url" in df.columns else None
-    hash_col = "doc_hash" if "doc_hash" in df.columns else None
+    df = df.sort_values("date", kind="stable", na_position="first")
+
     # Deduplicate on url
-    if url_col is not None:
-        has_url = df[url_col].notna() & (df[url_col] != "")
-
-        df_with_url = df[has_url].copy()
-        df_without_url = df[~has_url].copy()
-
-        df_with_url = df_with_url.drop_duplicates(subset=[url_col], keep="last")
-
-        df = pd.concat([df_with_url, df_without_url], ignore_index=True)
-        df = df.sort_values("_date_str", kind="stable", na_position="first")
+    has_url = df["url"].notna() & (df["url"] != "")
+    df_with_url = df[has_url].copy()
+    df_without_url = df[~has_url].copy()
+    df_with_url = df_with_url.drop_duplicates(subset=["url"], keep="last")
+    df = pd.concat([df_with_url, df_without_url], ignore_index=True)
+    df = df.sort_values("date", kind="stable", na_position="first")
 
     # Deduplicate on hash
-    if hash_col is not None:
-        has_hash = df[hash_col].notna() & (df[hash_col] != "")
-
-        df_with_hash = df[has_hash].copy()
-        df_without_hash = df[~has_hash].copy()
-
-        df_with_hash = df_with_hash.drop_duplicates(subset=[hash_col], keep="last")
-
-        df = pd.concat([df_with_hash, df_without_hash], ignore_index=True)
-
-    # Remove helper column
-    df = df.drop(columns=["_date_str"], errors="ignore")
+    has_hash = df["doc_hash"].notna() & (df["doc_hash"] != "")
+    df_with_hash = df[has_hash].copy()
+    df_without_hash = df[~has_hash].copy()
+    df_with_hash = df_with_hash.drop_duplicates(subset=["doc_hash"], keep="last")
+    df = pd.concat([df_with_hash, df_without_hash], ignore_index=True)
 
     return df
 
@@ -160,15 +118,17 @@ def parse_args():
         default=[],
         help="List of domains to exclude (e.g. 'regjeringen.no').",
     )
+    parser.add_argument(
+        "--log_level",
+        type=str,
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Logging level (default: INFO).",
+    )
     return parser.parse_args()
 
 
-def domain_from_key(k: str) -> str:
-    return k.rsplit("_", 1)[0]
-
-
-def main():
-    args = parse_args()
+def main(args):
     data_dir: Path = args.data_dir
     output_dir: Path = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -176,38 +136,40 @@ def main():
     groups = find_grouped_files(data_dir)
 
     # Find which groups are already done
-    completed = {
-        p.stem for p in output_dir.iterdir() if p.suffix == ".jsonl" and p.is_file()
-    }
+    completed = {p.stem for p in output_dir.glob("*jsonl")}
 
-    exclude = set(args.exclude_domains or [])
+    domains_to_exclude = set(args.exclude_domains or [])
 
-    keys_to_process = sorted(
-        k
-        for k in groups.keys()
-        if domain_from_key(k) not in exclude and k not in completed
+    domain_langs_to_process = sorted(
+        (domain, lang)
+        for (domain, lang) in groups
+        if domain not in domains_to_exclude and f"{domain}_{lang}" not in completed
     )
 
     logger.info("Found %s groups (domain+language).", len(groups))
     logger.info(
-        "Already done: %s. Remaining: %s.", len(completed), len(keys_to_process)
+        "Already done: %s. Remaining: %s.", len(completed), len(domain_langs_to_process)
     )
 
-    for key in tqdm(
-        keys_to_process,
+    for domain, lang in tqdm(
+        domain_langs_to_process,
         desc="Building superset",
         unit="group",
         dynamic_ncols=True,
     ):
-        year_filepath_pairs = groups[key]
-        logger.info("Processing: %s (%s files)", key, len(year_filepath_pairs))
+        filepaths = groups[(domain, lang)]
 
-        df = build_group_df(year_filepath_pairs)
+        logger.info(
+            "Processing domain: %s lang: %s (%s files)",
+            domain,
+            lang,
+            len(filepaths),
+        )
+
+        df = build_df(filepaths)
 
         if df.empty:
-            out_path = output_dir / f"{key}.jsonl"
-            out_path.write_text("")
-            logger.info("Empty group, wrote empty file.")
+            logger.info("Empty group, skipping.")
             continue
 
         rows_before = len(df)
@@ -221,12 +183,13 @@ def main():
             rows_before - rows_after,
         )
 
-        out_path = output_dir / f"{key}.jsonl"
+        out_path = output_dir / f"{domain}_{lang}.jsonl"
         df.to_json(out_path, orient="records", lines=True)
 
     logger.info("Done! Superset written to: %s", output_dir)
 
 
 if __name__ == "__main__":
-    setup_logging(source_script="make_målfrid_superset", log_level="INFO")
-    main()
+    args = parse_args()
+    setup_logging(source_script="make_målfrid_superset", log_level=args.log_level)
+    main(args)
