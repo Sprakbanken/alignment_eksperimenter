@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 import re
 import pandas as pd
@@ -57,8 +56,6 @@ def find_grouped_files(data_dir: str) -> dict[str, list[tuple[int, str]]]:
     for key in groups:
         groups[key].sort(key=lambda t: (t[0], t[1]))
     return groups
-
-
 
 
 def build_group_df(year_filepath_pairs: list[tuple[int, str]]) -> pd.DataFrame:
@@ -136,8 +133,6 @@ def dedupe_keep_last(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Create a deduplicated superset of Målfrid dataset across years (per domain+language)."
@@ -165,8 +160,10 @@ def parse_args():
     )
     return parser.parse_args()
 
+
 def domain_from_key(k: str) -> str:
-        return k.rsplit("_", 1)[0]
+    return k.rsplit("_", 1)[0]
+
 
 def main():
     args = parse_args()
@@ -185,10 +182,9 @@ def main():
 
     exclude = set(args.exclude_domains or [])
 
-
-
     keys_to_process = sorted(
-        k for k in groups.keys()
+        k
+        for k in groups.keys()
         if domain_from_key(k) not in exclude and k not in completed
     )
 

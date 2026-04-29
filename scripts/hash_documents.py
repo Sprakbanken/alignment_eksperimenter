@@ -31,7 +31,6 @@ def add_hash_column(
     if column_name in df.columns:
         df[hash_column_name] = df[column_name].apply(compute_doc_hash)
     else:
-        number_of_missing_fulltext_columns += 1
         print("No fulltext column found.")
     return df
 
