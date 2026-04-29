@@ -156,8 +156,8 @@ def filter_and_align(
         return pd.DataFrame()
 
     matches = align(
-        lang1_documents=lang1_df.fulltext_joined,
-        lang2_documents=lang2_df.fulltext_joined,
+        lang1_documents=lang1_df.fulltext_joined.to_list(),
+        lang2_documents=lang2_df.fulltext_joined.to_list(),
         lang1_filename_identifier=f"{website_name}_{lang1}",
         lang2_filename_identifier=f"{website_name}_{lang2}",
         embedding_dir=embedding_dir,

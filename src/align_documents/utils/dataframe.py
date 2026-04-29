@@ -17,16 +17,25 @@ def add_pair_key(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_file_info(data_dir: Path) -> pd.DataFrame:
-    info = sorted(
-        [e.name[:-6].split("_") + [e.name, e] for e in data_dir.glob("*.jsonl")]
+    file_info_list = sorted(
+        [e.stem.split("_") + [e.name, e] for e in data_dir.glob("*.jsonl")]
     )
-    df = pd.DataFrame(
-        info, columns=["website", "language", "format", "file_name", "file_path"]
-    )
+    columns = ["website", "language", "format", "file_name", "file_path"]
+
+    if len(file_info_list[0]) < len(columns):
+        logger.info("Assuming format not in jsonl filename")
+        logger.debug("file_info_list[0]: %s", file_info_list[0])
+        df = pd.DataFrame(
+            file_info_list, columns=["website", "language", "file_name", "file_path"]
+        )
+    else:
+        df = pd.DataFrame(file_info_list, columns=columns)
+
     logger.info("Found %s files in %s", len(df), data_dir)
     logger.info("Number of unique websites: %s", len(df.website.unique()))
     logger.info("Unique languages:          %s", df.language.unique())
-    logger.info("Unique formats:            %s", df.format.unique())
+    if "format" in df.columns:
+        logger.info("Unique formats:            %s", df.format.unique())
     return df
 
 
