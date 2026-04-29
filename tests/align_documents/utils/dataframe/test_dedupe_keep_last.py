@@ -1,6 +1,6 @@
 import pandas as pd
 
-from make_målfrid_superset import dedupe_keep_last
+from align_documents.utils.dataframe import dedupe_keep_last
 
 
 def _make_row(url: str, doc_hash: str, date: str):
