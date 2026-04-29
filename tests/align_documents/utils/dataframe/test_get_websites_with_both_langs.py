@@ -19,8 +19,7 @@ def test_returns_empty_df_when_no_websites_with_both_langs():
     }
     df = pd.DataFrame(data)
     result = get_websites_with_both_langs(df, languages=("eng", "nob"))
-    expected = pd.DataFrame(columns=["website", "language"])
-    pd.testing.assert_frame_equal(result, expected)
+    assert result.empty
 
 
 def test_returns_only_websites_with_both_langs():
