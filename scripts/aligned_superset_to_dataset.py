@@ -186,7 +186,11 @@ def log_split_statistics(
 
 def drop_columns_and_fix_date_format(df: pd.DataFrame) -> pd.DataFrame:
     columns_to_drop = [
-        col for col in df.columns if col.startswith("fulltext_joined")
+        col
+        for col in df.columns
+        if col.startswith("fulltext_joined")
+        or col.startswith("lang_")
+        or col.startswith("doc_hash")
     ] + ["key_0"]
     df = df.drop(columns=columns_to_drop)
 
@@ -204,20 +208,21 @@ def drop_columns_and_fix_date_format(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     log_level = "INFO"
+    log_extra = False
     setup_logging(source_script="restructure_aligned_superset", log_level=log_level)
 
-    superset_path = Path("data/output/målfrid_superset_aligned_raw")
+    superset_path = Path("data/output/maalfrid_superset_aligned_raw")
     dataset_output_path = Path("data/målfrid_parallel")
     dataset_repo_id = "NbAiLab/maalfrid_parallel"
     private = True
     domain_counts = get_domain_counts(superset_path)
 
-    if log_level == "DEBUG":
+    if log_extra:
         log_domain_counts(domain_counts)
 
     assignments = assign_domains_to_splits(domain_counts)
 
-    if log_level == "DEBUG":
+    if log_extra:
         log_split_statistics(domain_counts, assignments)
 
     logger.debug("assignments: %s", assignments)
@@ -227,6 +232,12 @@ if __name__ == "__main__":
 
     for lang_pair_dir in superset_path.iterdir():
         for split_name, domain_list in split_to_domains.items():
+            logger.info(
+                "Processing %s split of lang pair %s. (%s domains)",
+                split_name,
+                lang_pair_dir.name,
+                len(domain_list),
+            )
             output_file = (
                 dataset_output_path / lang_pair_dir.name / f"{split_name}.jsonl"
             )
