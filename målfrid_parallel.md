@@ -76,3 +76,82 @@ Antall dokumentpar per språkpar per split:
 
 
 
+---
+
+# Målfrid Parallel
+
+The resource contains parallel data for English–Bokmål, English–Nynorsk, and Bokmål–Nynorsk from 238 government domains.
+
+The data originates from the so-called Målfrid project, in which the National Library of Norway, in collaboration with the Language Council of Norway, harvests government websites as part of language supervision.
+
+We combined the following datasets:
+- Målfrid 2021 [resource catalogue](https://www.nb.no/sprakbanken/ressurskatalog/oai-nb-no-sbr-69/)
+- Målfrid 2022 [resource catalogue](https://www.nb.no/sprakbanken/ressurskatalog/oai-nb-no-sbr-97/)
+- Målfrid 2023 [resource catalogue](https://www.nb.no/sprakbanken/ressurskatalog/oai-nb-no-sbr-98/)
+- Målfrid 2024 [resource catalogue](https://www.nb.no/sprakbanken/ressurskatalog/oai-nb-no-sbr-99/)
+- Målfrid 2025 [resource catalogue](https://www.nb.no/sprakbanken/ressurskatalog/oai-nb-no-sbr-102/)
+
+## Data format and usage
+
+The data is in JSONL format with one JSONL file per language pair per data split. Each row contains the following unique columns:
+
+- url_{language}: the URL the document was harvested from
+- domain_{language}: the name of the website the document was harvested from
+- mimetype_{language}: the type of document the text was harvested from (pdf, docx, html)
+- fulltext_{language}: the text content of the document (list of strings)
+- date_{lang}: the time of harvesting
+
+You can load the dataset as follows:
+
+```
+from datasets import load_dataset
+
+ds = load_dataset("maalfrid_parallel/nob_eng")
+
+print(ds)
+```
+
+The output will look like this:
+
+
+```
+DatasetDict({
+    train: Dataset({
+        features: ['doc_hash_nob', 'lang_nob', 'url_nob', 'domain_nob', 'date_nob', 'mimetype_nob', 'fulltext_nob', 'doc_hash_eng', 'lang_eng', 'url_eng', 'domain_eng', 'date_eng', 'mimetype_eng', 'fulltext_eng'],
+        num_rows: 157044
+    })
+    validation: Dataset({
+        features: ['doc_hash_nob', 'lang_nob', 'url_nob', 'domain_nob', 'date_nob', 'mimetype_nob', 'fulltext_nob', 'doc_hash_eng', 'lang_eng', 'url_eng', 'domain_eng', 'date_eng', 'mimetype_eng', 'fulltext_eng'],
+        num_rows: 19720
+    })
+    test: Dataset({
+        features: ['doc_hash_nob', 'lang_nob', 'url_nob', 'domain_nob', 'date_nob', 'mimetype_nob', 'fulltext_nob', 'doc_hash_eng', 'lang_eng', 'url_eng', 'domain_eng', 'date_eng', 'mimetype_eng', 'fulltext_eng'],
+        num_rows: 19720
+    })
+})
+```
+
+## Method
+
+Document pairs were aligned per website using NbAiLab/nb-sbert-v2-base and the sentence-transformers library.
+For English–Norwegian parallel data the minimum cosine similarity threshold is 0.80, and for Norwegian parallel data it is 0.95.
+We used a manually annotated parallel dataset to find the optimal threshold values. See source code at https://github.com/Sprakbanken/alignment_eksperimenter. The manually annotated dataset is available at https://github.com/Sprakbanken/alignment_eksperimenter/blob/main/manual_annotation/annotated_data/gold_data.csv.
+
+## Statistics
+
+Number of document pairs per language pair per split:
+
+- English–Bokmål:
+    - train: 157 044
+    - validation: 19 720
+    - test: 19 720
+- English–Nynorsk:
+    - train: 30 901
+    - validation: 3796
+    - test: 3795
+- Bokmål–Nynorsk:
+    - train: 31 434
+    - validation: 3928
+    - test: 3929
+
+
