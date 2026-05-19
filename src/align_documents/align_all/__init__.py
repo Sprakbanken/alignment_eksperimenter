@@ -9,7 +9,6 @@ from align_documents.utils.dataframe import (
     jsonl_files_to_df,
 )
 from align_documents.align import filter_and_align
-from align_documents.metadata import AlignmentRun
 import argparse
 
 logger = logging.getLogger(__name__)
@@ -65,27 +64,28 @@ def main():
 
     lang_1, lang_2 = config.languages
 
-    run_metadata = AlignmentRun(
-        __name__,
-        args,
-        embedding_model,
-        output_dir,
-        args.config_file,
-    )
+    # run_metadata = AlignmentRun(
+    #     __name__,
+    #     args,
+    #     embedding_model,
+    #     output_dir,
+    #     args.config_file,
+    # )
 
     for website, df_ in tqdm(
         df.groupby("website"),
         total=len(df.website.unique()),
-        desc="Processing files per website",
+        desc="Aligning docs per website",
     ):
         logger.debug("Processing website %s", website)
         logger.debug("Number of files: %s", len(df_))
-        logger.debug("Formats: %s", df_.format.unique())
+        if "format" in df_.columns:
+            logger.debug("Formats: %s", df_.format.unique())
 
         all_website_docs = jsonl_files_to_df(df_.file_path)
         logger.debug("Number of documents: %s", len(all_website_docs))
 
-        run_metadata.extend_pipeline_input_docs(all_website_docs)
+        # run_metadata.extend_pipeline_input_docs(all_website_docs)
 
         aligned_documents = filter_and_align(
             all_website_docs,
@@ -107,5 +107,5 @@ def main():
 
     logger.info("All aligned documents saved to %s", output_dir_data)
 
-    run_metadata.write()
-    logger.info("Metadata saved to %s.", run_metadata.metadata_dir)
+    # run_metadata.write()
+    # logger.info("Metadata saved to %s.", run_metadata.metadata_dir)

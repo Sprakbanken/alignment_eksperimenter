@@ -10,7 +10,11 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path("data/output/grid_search")
 # todo: add more models
-EMBEDDING_MODEL_LIST = ["NbAiLab/nb-sbert-v2-base"]
+EMBEDDING_MODEL_LIST = [
+    # "NbAiLab/nb-sbert-v2-base",
+    "microsoft/harrier-oss-v1-0.6b",
+    # "codefuse-ai/F2LLM-v2-1.7B",
+]
 AGGREGATION_STRATEGY = ["mean", "cut-off"]
 THRESHOLDS = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
 MODES = ["strict", "lenient"]
@@ -24,7 +28,6 @@ if __name__ == "__main__":
     for (lang1, lang2), group in gd.groupby(["lang_lang_1", "lang_lang_2"]):
         for mode in MODES:
             logger.info("Comparing %s and %s in %s mode", lang1, lang2, mode)
-            # TODO: hent ut positive og negative par av group
             logger.debug("Unique annotations: %s", group.annotation.unique())
 
             positive_pairs = [
@@ -64,6 +67,14 @@ if __name__ == "__main__":
                     embedding_dir = Path("data/embeddings") / embedding_model
                     embedding_dir.mkdir(parents=True, exist_ok=True)
                     for threshold in THRESHOLDS:
+                        scores_path = (
+                            model_output_dir
+                            / f"scores_{aggregation_strategy}_{threshold:.2f}_{lang1}_{lang2}_{mode}.json"
+                        )
+                        if scores_path.exists():
+                            logger.info("%s already exists, skipping", scores_path)
+                            continue
+
                         config = Config(
                             embedding_model=embedding_model,
                             aggregation_strategy=aggregation_strategy,
@@ -72,7 +83,7 @@ if __name__ == "__main__":
                             languages=(lang1, lang2),
                             data_dir=Path(""),
                             output_dir=model_output_dir,
-                            batch_size=32,
+                            batch_size=4,
                             number_to_letter_ratio=0,
                             min_document_length=0,
                         )
@@ -83,10 +94,7 @@ if __name__ == "__main__":
                             filename_prefix=f"{mode}_{lang1}_{lang2}",
                         )
                         scores = calculate_scores(confusion_matrix)
-                        scores_path = (
-                            model_output_dir
-                            / f"scores_{aggregation_strategy}_{threshold:.2f}_{lang1}_{lang2}_{mode}.json"
-                        )
+
                         scores_path.write_text(json.dumps(scores))
                         logger.info(
                             "Embedding model: %s, Aggregation strategy: %s, Threshold: %.2f, Scores: %s",
